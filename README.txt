@@ -1,7 +1,7 @@
 说明:
 	*纯lua实现的敏感词检测过滤功能库,基于Trie。
-	*当敏感词很少时, 使用直接遍历string.find查找效率较高; 当敏感词较多的时候, 使用Tri查找的方式效率高.
 	*10000条非&敏感词, 1000次查找或过滤, 平均30ms.
+	*当敏感词很少时, 直接遍历string.find查找效率较高; 当敏感词较多的时候, 使用Tri查找的方式效率高.
 	*Index.lua是测试用例, 运行即可.
 	
 敏感词检测规则:
@@ -23,7 +23,7 @@
 	local result = zmatch:CheckByTrie(text) 
 (3)敏感词使用遍历检测接口
 	local result = zmatch:CheckByOldWay(text)
-(4)不带&规则的单个词过滤接口
+(4)非&的敏感词过滤接口
 	local newText = zmatch:FilterText(text)
-(5)敏感词过滤接口(包括单个词和带&词):
+(5)完整的敏感词过滤接口(包括带&词):
 	等待后续添加。
