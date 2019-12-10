@@ -134,7 +134,8 @@ end
 function Trie:CheckCharArrayMatchedByAC(chars)
 	local node = self._root
 	local i = 1
-	while i <= #chars do
+	local count = #chars
+	while i <= count do
 		if node:IsWord() then
 			return true
 		end
