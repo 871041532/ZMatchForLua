@@ -1,6 +1,7 @@
 -- 说明: 最原始的trie,提供不带&词的匹配。
 require("PreLoad")
 
+local Queue = require("Queue")
 local Node = require("Node")
 local Trie = class("Trie")
 
@@ -77,6 +78,81 @@ function Trie:CheckCharArrayMatched(chars)
 	end
 	-- print(string.format("迭代完毕结果是:%s\n", isSensitive and "true" or "false"))
 	return isSensitive
+end
+
+-- 下面是新增的AC自动机优化
+-- 不影响上面逻辑，仍然可以使用上面接口进行朴素匹配, 酌情使用
+-- 创建AC自动机, 要想使用AC相关接口，必须要先BuildAC
+function Trie:BuildAC()
+	local queue = Queue.New()
+	self._root:SetFailNode(nil)
+	queue:Enqueue(self._root)
+	while queue:NotEmpty() do
+		local node = queue:Dequeue()
+		local children = node:GetChildren()
+		if children then
+			for _,child in pairs(children) do
+				queue:Enqueue(child)  -- 这句是广度优先遍历树的通用模式
+				if node == self._root then
+					-- 根节点
+					child:SetFailNode(node)
+				else
+					local failNode = node:GetFailNode()  -- 此处不必判空node必定有faileNode
+					local matchNode = failNode:GetChild(child.char)
+					if matchNode then
+						child:SetFailNode(matchNode)
+					else
+						local search = true
+						while search do
+							failNode = failNode:GetFailNode()
+							if failNode then
+								matchNode = failNode:GetChild(child.char)
+								if matchNode then
+									child:SetFailNode(matchNode)
+									search = false
+								end
+							else
+								-- 一直找不到failNode
+								child:SetFailNode(self._root)
+								search = false
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- 使用AC自动机检测文本
+function Trie:CheckTextMatchedByAC(text)
+	local chars = string.ConvertToCharArray(text)
+	return self:CheckCharArrayMatchedByAC(chars)
+end
+
+-- 使用AC自动机检测数组
+function Trie:CheckCharArrayMatchedByAC(chars)
+	local node = self._root
+	local i = 1
+	while i <= #chars do
+		if node:IsWord() then
+			return true
+		end
+		local char = chars[i]
+		local child = node:GetChild(char)
+		if child then
+			node = child
+			i = i + 1
+		else
+			local failNode = node:GetFailNode()
+			if failNode then
+				node = failNode
+			else
+				i = i + 1
+			end
+		end
+	end
+	return false
 end
 
 return Trie

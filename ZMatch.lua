@@ -32,6 +32,8 @@ function ZMatch:__BuildCheckData()
 			self.singleTrie:AddWord(strings[1])
 		end
 	end
+	-- BuildAC
+	self.singleTrie:BuildAC()
 end
 
 
@@ -65,11 +67,18 @@ function ZMatch:__CheckSingle(text)
 	return self.singleTrie:CheckTextMatched(text)
 end
 
+-- 单词使用AC匹配
+function ZMatch:__CheckSingleByAC(text)
+	return self.singleTrie:CheckTextMatchedByAC(text)
+end
+
 -- 使用Trie匹配
 function ZMatch:CheckByTrie(text)
 	local chars = string.ConvertToCharArray(text)
 	return self.singleTrie:CheckCharArrayMatched(chars) or self._multiTrie:CheckCharArrayMatched(chars)
 end
+
+-- 使用Tree
 
 -- 使用Trie替换敏感词(暂时只有单个词的检测替换, 带&的多词后续添加)
 function ZMatch:FilterText(text)
@@ -159,6 +168,15 @@ function ZMatch.TestCheck(text, newWayCount, oldWayCOunt)
 	print(string.format("%d次遍历查找【%s】时间:%f,结果:%s", count, text, t3 - t2, r and "true" or "false"))
 end
 
+function ZMatch.TestCheckByAC(text, count)
+	count = count  -- 此处输入遍历方式检测次数
+	t2 = os.clock()
+	for i=1,count do
+		r = zmatch:__CheckSingleByAC(text)
+	end
+	t3 = os.clock()
+	print(string.format("%d次AC自动机查找【%s】时间:%f,结果:%s", count, text, t3 - t2, r and "true" or "false"))
+end
 
 function ZMatch.TestFilter(text, newWayCount, oldWayCOunt)
 	count = newWayCount
