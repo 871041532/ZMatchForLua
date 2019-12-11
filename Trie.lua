@@ -52,10 +52,10 @@ function Trie:CheckCharArrayMatched(chars)
 		for j=i,#chars do	
 			-- 内层循环
 			local char = chars[j]
-			local childNode = node:GetChild(char)
+			local childNode = node._children and node._children[char]
 			-- print("开始判断字符:", char)
 			if childNode then
-				if childNode:IsWord() and (not self._extCheckFunc or self._extCheckFunc(i, j)) then
+				if childNode._isWord and (not self._extCheckFunc or self._extCheckFunc(i, j)) then
 					-- print("在trie的叶节点或茎节点找到了子串", childNode.char)
 					suiteded = true
 					break
@@ -143,12 +143,12 @@ function Trie:CheckCharArrayMatchedByAC(chars)
 	local child
 	for i=1,#chars do
 		char = chars[i]
-		child = node._children[char]
+		child = node._children and node._children[char]
 		if not child then
 			-- 没有child则使用Fail指针回溯查找
 			while not child and node do
 				node = node._failNode
-				child = node and node._children[char]
+				child = node and node._children and node._children[char]
 			end
 		end
 		-- 有child则将node设置为child，没有child则设为root
