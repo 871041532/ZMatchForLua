@@ -10,9 +10,10 @@ function Trie:ctor()
 	self._extCheckFunc = nil
 end
 
--- 使用otherTrie的检索数据作为自己的数据
-function Trie:BuildFromOtherTrie(otherTrie)
+-- 拷贝构造函数
+function Trie:CopyConstruction(otherTrie)
 	self._root = otherTrie._root
+	-- _extCheckFunc不设置，可以让本对象去定制
 end
 
 -- 当一个node匹配为word时, 可能需要额外check才能确认是敏感词
@@ -84,7 +85,6 @@ end
 -- 不影响上面逻辑，仍然可以使用上面接口进行朴素匹配
 -- 创建AC自动机, 要想使用AC相关接口，必须要先BuildAC
 -- BuildAC会有额外时间消耗，对于短字符串来说没必要使用AC
--- 脚本语言没有内联，只能暴力手动内联了
 function Trie:BuildAC()
 	local queue = Queue.New()
 	local node

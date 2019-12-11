@@ -4,6 +4,8 @@ require("SensitiveWordsCfg")
 local Trie = require("Trie")
 local FilterTrie = require("FilterTrie")
 local MultiTrie = require("MultiTrie")
+local MultiFilterTrie = require("MultiFilterTrie")
+
 local ZMatch = class("ZMatch")
 
 function ZMatch:ctor()
@@ -13,6 +15,8 @@ function ZMatch:ctor()
 	self.filterTrie = FilterTrie.New(self.singleTrie)
 	-- 带有&符号的多词验证
 	self._multiTrie = MultiTrie.New()
+	-- 带有&符号的多词过滤
+	self._multiFilterTrie = MultiFilterTrie.New(self._multiTrie)
 	self.multiList = {}  -- item是数组
 	-- 原始配置表
 	self.originCfg = nil
@@ -95,7 +99,24 @@ end
 
 -- 使用Trie替换敏感词(暂时只有单个词的检测替换, 带&的多词后续添加)
 function ZMatch:FilterText(text)
-	return self.filterTrie:FilterText(text)
+	local chars = string.ConvertToCharArray(text)
+	local chars, matched1 = self.filterTrie:FilterChars(chars)
+	local chars, matched2 = self._multiFilterTrie:FilterChars(chars)
+	local matched = matched1 or matched2
+	if matched then
+		return table.concat(chars), true
+	end
+	return text, false
+end
+
+-- 带&词过滤
+function ZMatch:FilterMultiChars(chars)
+	return self._multiFilterTrie:FilterChars(chars)
+end
+
+-- 非&词过滤
+function ZMatch:FilterSingleChars(chars)
+	return self.filterTrie:FilterChars(chars)
 end
 
 -- 直接使用遍历的方式匹配所有的
@@ -202,6 +223,20 @@ function ZMatch.TestFilter(text, newWayCount, oldWayCOunt)
 	end
 	t3 = os.clock()
 	print(string.format("\n\n%d次敏感词过滤,时间:%f,\n--源:【%s】\n--结果:【%s】", count, t3 - t2, text, r))
+	local chars = string.ConvertToCharArray(text)
+	t2 = os.clock()
+	for i=1,count do
+		chars = zmatch:FilterSingleChars(chars)
+	end
+	t3 = os.clock()
+	print(string.format("\t%d次常规词过滤,时间%f", count, t3 - t2))
+
+	t2 = os.clock()
+	for i=1,count do
+		chars = zmatch:FilterMultiChars(chars)
+	end
+	t3 = os.clock()
+	print(string.format("\t%d次带&词过滤,时间%f", count, t3 - t2))
 end
 
 return ZMatch

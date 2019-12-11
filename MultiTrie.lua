@@ -8,11 +8,31 @@ local MultiTrie = class("MultiTrie")
 MultiTrie.checkIdx = 0
 
 function MultiTrie:ctor()
-	self._trie = nil
-	self._wordTileMap = nil
-	self._WordTileList = nil
+	self._trie = Trie.New()
+	self._wordTileMap = {}
+	self._WordTileList = {}
 	self._curCheckChars = nil
 	self._curCheckKeyCache = nil  -- 当前查找key的cache
+	self._curCheckMatchedIdxData = nil -- 额外的check函数回调data（当某条单词被满足时里面记录了下表索引）
+	self._extCheckFunc = nil  -- 额外的check函数
+	self:Init()
+end
+
+-- func参数是int数组，每两个表示一个下标
+function MultiTrie:SetExtCheckFunc(func)
+	self._extCheckFunc = func
+end
+
+function MultiTrie:CopyConstruction(otherTree)
+	-- 拷贝构造的目的是复用otherTree的：
+	--_wordTileMap数据，
+	--_WordTileList数据
+	--_trie种的rootNode
+	-- 写法有点丑，但为了省资源
+	self._trie = Trie.New()
+	self._trie:CopyConstruction(otherTree._trie)
+	self._wordTileMap = otherTree._wordTileMap
+	self._WordTileList = otherTree._WordTileList
 	self:Init()
 end
 
@@ -26,6 +46,7 @@ function MultiTrie:Init()
 	-- 		word4 = 0,
 	-- 		__num = 4,
 	-- 		__curMatchNum = 0,
+    --      __matchedData = {},
 	-- 	}, 
 	-- 	{
 	-- 		word1 = 0, 
@@ -33,15 +54,14 @@ function MultiTrie:Init()
 	-- 		word3 = 0,
 	-- 		__num = 3,
 	-- 		__curMatchNum = 0,
+    --      __matchedData = {},
 	-- 	}
 	-- }
 	-- 单个word对应的一个list
-	self._wordTileMap = {} 
-	self._WordTileList = {}
-	self._trie = Trie.New()
 	self._trie:SetExtCheckFunc(function(i,j)
 		local key = nil
-		local idx = i*100 + j
+		local idx = i*1000 + j
+		-- 复用key的逻辑，可要可不要
 		key = self._curCheckKeyCache[idx]
 		if not key then
 			local chars = {}
@@ -55,11 +75,21 @@ function MultiTrie:Init()
 		end
 		local setList = self._wordTileMap[key]
 		for _,v in pairs(setList) do
-			if v[key] ~= MultiTrie.checkIdx then
+			if v[key] ~= MultiTrie.checkIdx and v.__curMatchNum ~= v.__num then
 				v[key] = MultiTrie.checkIdx
 				v.__curMatchNum = v.__curMatchNum + 1
-				if v.__curMatchNum == v.__num then
-					return true
+				if self._extCheckFunc then
+					table.insert(v.__matchedData, i)
+					table.insert(v.__matchedData, j)
+					if v.__curMatchNum == v.__num then
+						if self._extCheckFunc(v.__matchedData) then
+							return true
+						end 
+					end
+				else
+					if v.__curMatchNum == v.__num then
+						return true
+					end
 				end
 			end
 		end
@@ -96,8 +126,11 @@ function MultiTrie:__AddToTiledMap(wordSet, num)
 end
 
 function MultiTrie:__ResetTiledMap()
-	for i=1,#self._WordTileList do
-		self._WordTileList[i].__curMatchNum = 0
+	for _,v in ipairs(self._WordTileList) do
+		v.__curMatchNum = 0
+		if self._extCheckFunc then
+			v.__matchedData = {}
+		end
 	end
 end
 
@@ -105,9 +138,9 @@ function MultiTrie:CheckCharArrayMatched(chars)
 	MultiTrie.checkIdx = MultiTrie.checkIdx + 1
 	self._curCheckKeyCache = {}
 	self._curCheckChars = chars
+	self:__ResetTiledMap()  -- 重置千次 0.041
 	local result = self._trie:CheckCharArrayMatched(chars)  -- 千次0.25
 	self._curCheckChars = nil
-	self:__ResetTiledMap()  -- 重置千次 0.041
 	return result
 end
 
