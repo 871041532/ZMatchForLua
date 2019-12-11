@@ -80,19 +80,24 @@ function Trie:CheckCharArrayMatched(chars)
 	return isSensitive
 end
 
--- 下面是新增的AC自动机优化
--- 不影响上面逻辑，仍然可以使用上面接口进行朴素匹配, 酌情使用
+------------------------ 下面是新增的AC自动机优化-----------------------------
+-- 不影响上面逻辑，仍然可以使用上面接口进行朴素匹配
 -- 创建AC自动机, 要想使用AC相关接口，必须要先BuildAC
+-- BuildAC会有额外时间消耗，对于短字符串来说没必要使用AC
+-- 脚本语言没有内联，只能暴力手动内联了
 function Trie:BuildAC()
 	local queue = Queue.New()
+	local node
+	local children
 	self._root:SetFailNode(nil)
 	queue:Enqueue(self._root)
 	while queue:NotEmpty() do
-		local node = queue:Dequeue()
-		local children = node:GetChildren()
+		node = queue:Dequeue()
+		-- 处理到某个node节点，所做操作是：将它的子节点一一设置FailNode
+		children = node:GetChildren()
 		if children then
 			for _,child in pairs(children) do
-				queue:Enqueue(child)  -- 这句是广度优先遍历树的通用模式
+				queue:Enqueue(child)  -- 此句广度优先遍历树的通用模式
 				if node == self._root then
 					-- 根节点
 					child:SetFailNode(node)
@@ -131,22 +136,24 @@ function Trie:CheckTextMatchedByAC(text)
 end
 
 -- 使用AC自动机检测数组：for循环法
--- 脚本语言没有内联，只能暴力获取了
+-- 脚本语言没有内联，只能暴力手动内联了
 function Trie:CheckCharArrayMatchedByAC(chars)
 	local node = self._root
+	local char
+	local child
 	for i=1,#chars do
-		local char = chars[i]
-		local child = node:GetChild(char)
+		char = chars[i]
+		child = node._children[char]
 		if not child then
 			-- 没有child则使用Fail指针回溯查找
 			while not child and node do
-				node = node:GetFailNode()
-				child = node and node:GetChild(char)
+				node = node._failNode
+				child = node and node._children[char]
 			end
 		end
 		-- 有child则将node设置为child，没有child则设为root
 		node = child or self._root
-		if child and child:IsWord() then
+		if child and child._isWord then
 			return true
 		end
 	end
