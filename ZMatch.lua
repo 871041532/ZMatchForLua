@@ -149,7 +149,7 @@ local printLine = function()
 	print("----")
 end
 function ZMatch.TestCheck(text, newWayCount, oldWayCOunt)
-	print(string.format("\n开始对【%s】进行敏感词检测...", text))
+	print(string.format("\n\n开始对【%s】进行敏感词检测...", text))
 	printLine()
 	count = oldWayCOunt
 	t2 = os.clock()
