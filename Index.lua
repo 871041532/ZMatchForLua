@@ -38,14 +38,14 @@ function TestCheck(text, newWayCount, oldWayCOunt)
 		r = zmatch:_CheckAllByTraverse(text)
 	end
 	t3 = os.clock()
-	print(string.format("老接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
+	print(string.format("原始遍历接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
 	count = newWayCount
 	t2 = os.clock()
 	for i=1,count do
 		r = zmatch:CheckTextByAC(text)
 	end
 	t3 = os.clock()
-	print(string.format("最终接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
+	print(string.format("库接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
 	printLine()
 	local chars = string.ConvertToCharArray(text)
 	t2 = os.clock()
