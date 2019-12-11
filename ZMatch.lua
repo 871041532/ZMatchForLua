@@ -201,7 +201,7 @@ function ZMatch.TestFilter(text, newWayCount, oldWayCOunt)
 		r = zmatch:FilterText(text)
 	end
 	t3 = os.clock()
-	print(string.format("\n%d次trie过滤,时间:%f,源:【%s】结果:【%s】", count, t3 - t2, text, r))
+	print(string.format("\n\n%d次敏感词过滤,时间:%f,\n--源:【%s】\n--结果:【%s】", count, t3 - t2, text, r))
 end
 
 return ZMatch
