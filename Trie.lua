@@ -130,27 +130,24 @@ function Trie:CheckTextMatchedByAC(text)
 	return self:CheckCharArrayMatchedByAC(chars)
 end
 
--- 使用AC自动机检测数组
+-- 使用AC自动机检测数组：for循环法
+-- 脚本语言没有内联，只能暴力获取了
 function Trie:CheckCharArrayMatchedByAC(chars)
 	local node = self._root
-	local i = 1
-	local count = #chars + 1
-	while i <= count do
-		if node:IsWord() then
-			return true
-		end
+	for i=1,#chars do
 		local char = chars[i]
 		local child = node:GetChild(char)
-		if child then
-			node = child
-			i = i + 1
-		else
-			local failNode = node:GetFailNode()
-			if failNode then
-				node = failNode
-			else
-				i = i + 1
+		if not child then
+			-- 没有child则使用Fail指针回溯查找
+			while not child and node do
+				node = node:GetFailNode()
+				child = node and node:GetChild(char)
 			end
+		end
+		-- 有child则将node设置为child，没有child则设为root
+		node = child or self._root
+		if child and child:IsWord() then
+			return true
 		end
 	end
 	return false
