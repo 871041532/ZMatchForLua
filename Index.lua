@@ -99,17 +99,72 @@ function TestFilter(text, newWayCount, oldWayCOunt)
 	print(string.format("\t%d次带&词过滤,时间%f", count, t3 - t2))
 end
 
+-- 检测重复配置
+function CheckRepetCfg()
+	-- 是否有敏感词没检测出来
+	for k,v in pairs(zmatch.originCfg) do
+		local r1 = zmatch:CheckTextByAC(v["word"])
+		local r2 = zmatch:CheckTextByAC("1"..v["word"])
+		local r3 = zmatch:CheckTextByAC(v["word"].."1")
+		local r4 = zmatch:CheckTextByAC("1"..v["word"].."1")
+		if not (r1 and r2 and r3 and r4) then
+			print("敏感词没检测出来:", v["word"])
+			return
+		end
+	end
+
+	-- 遍历,最耗的重复语义检测
+	local count = 0
+	local sensitiveFunc = function(text)
+		return string.split(text, "&")
+	end
+ 	local checkAllByTraverse= function(k,text)
+ 		local isFirstPrint = false 
+ 		local firstPrint = function()
+ 			if not isFirstPrint then
+ 				isFirstPrint = true
+ 				print("\n----------------------------------------")
+ 				print(k, text, "已经涵盖了下面单词意思:")
+ 			end
+ 		end
+		local sheet = zmatch.originCfg
+		local strings = sensitiveFunc(text)
+		for k1, item in pairs(sheet) do
+			if k1 ~= k then
+				local m = true
+				for _, w in ipairs(strings) do
+					if not string.find(item.word, w, 1, true) then
+						m = false
+						break
+					end
+				end
+				if m then
+					firstPrint()
+					print("冗余:", k1, item.word)
+					count = count + 1
+				end
+			end
+		end
+		return false
+	end
+	for k,v in pairs(zmatch.originCfg) do
+		checkAllByTraverse(k, v.word)
+	end
+	print(string.format("冗余配置:%d条", count))
+end
+
 
 InitTestEnvironment()
 -- 测试敏感词检测
-TestCheck("正常说一句话的内容,大概这么长", 1000, 10)
-TestCheck("敏感词:苍井空-", 1000, 10)
-TestCheck("带&敏感词:-咳咳井空苍-", 1000, 10)
-local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
-小溪流泉映花彩, 松江孤岛一叶枫。
-南海涟波潭边杏, 星空野尽明日辉
-西塞山野雁自翔, 小桥水泽浸芳园。
-武园枯藤空留兰, 李氏眉宇尽是春。]]
--- local textString = ""
-TestCheck(textString, 1000, 10)
-TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随。咳咳dasdad井空苍苍, 台台ott", 1000, 1)
+-- TestCheck("正常说一句话的内容,大概这么长", 1000, 10)
+-- TestCheck("敏感词:苍井空-", 1000, 10)
+-- TestCheck("带&敏感词:-咳咳井空苍-", 1000, 10)
+-- local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
+-- 小溪流泉映花彩, 松江孤岛一叶枫。
+-- 南海涟波潭边杏, 星空野尽明日辉
+-- 西塞山野雁自翔, 小桥水泽浸芳园。
+-- 武园枯藤空留兰, 李氏眉宇尽是春。]]
+-- -- local textString = ""
+-- TestCheck(textString, 1000, 10)
+-- TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随。咳咳dasdad井空苍苍, 台台ott", 1000, 1)
+CheckRepetCfg()
