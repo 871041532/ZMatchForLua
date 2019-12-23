@@ -2,11 +2,11 @@
 require("PreLoad")
 
 local Queue = require("Queue")
-local Node = require("Node")
+local NodeWrap = require("NodeWrap")
 local Trie = class("Trie")
 
 function Trie:ctor()
-	self._root = Node.New()
+	self._root = NodeWrap.New()
 	self._extCheckFunc = nil
 	self.tempArray = {}
 end
@@ -27,17 +27,17 @@ function Trie:AddWord(word)
 	local chars, num = string.ConvertToCharArray(word, self.tempArray)
 	local node = self._root
 	for i=1,num do
-		if node._isWord then
+		if NodeWrap.IsWord(node) then
 			return
 		end
 		local char = chars[i]
-		local child = node:GetChild(char)
+		local child = NodeWrap.GetChild(node, char) -- node:GetChild(char)
 		if not child then
-			child = node:AddChild(char)
+			child = NodeWrap.AddChild(node, char)  -- node:AddChild(char)
 		end
 		if i == num then
 			-- 单词的最后一个字标记为单词
-			child:MarkAsWord(true)
+			NodeWrap.MarkAsWord(child, true)  -- child:MarkAsWord(true)
 		end
 		node = child
 	end
@@ -58,10 +58,11 @@ function Trie:CheckCharArrayMatched(chars)
 		for j=i,#chars do	
 			-- 内层循环
 			local char = chars[j]
-			local childNode = node._children and node._children[char]
+			local childNode = NodeWrap.GetChild(node, char)  -- node._children and node._children[char]
 			-- print("开始判断字符:", char)
 			if childNode then
-				if childNode._isWord and (not self._extCheckFunc or self._extCheckFunc(i, j)) then
+				-- childNode._isWord
+				if NodeWrap.IsWord(childNode) and (not self._extCheckFunc or self._extCheckFunc(i, j)) then
 					-- print("在trie的叶节点或茎节点找到了子串", childNode.char)
 					suiteded = true
 					break

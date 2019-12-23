@@ -56,11 +56,11 @@ function InitTestEnvironment()
 	print("构建Trie耗时:", t2 - t1)
 	t1 = os.clock()
 	local c2 = collectgarbage("count")
-	zmatch:BuildAC()
+	-- zmatch:BuildAC()
 	local c3 = collectgarbage("count")
 	t2 = os.clock()
-	print("构建AC内存:", c3 - c2)
-	print("构建AC耗时:", t2 - t1)
+	-- print("构建AC内存:", c3 - c2)
+	-- print("构建AC耗时:", t2 - t1)
 	local count = 0
 	for _,_ in pairs(zmatch.originCfg) do
 		count = count + 1
@@ -99,11 +99,11 @@ function TestCheck(text, newWayCount, oldWayCOunt)
 	t3 = os.clock()
 	print(string.format("\t%d次常规词Trie检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
 	t2 = os.clock()
-	for i=1,count do
-		r = zmatch:_CheckSingleByAC(chars)
-	end
-	t3 = os.clock()
-	print(string.format("\t%d次常规词AC检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
+	-- for i=1,count do
+	-- 	r = zmatch:_CheckSingleByAC(chars)
+	-- end
+	-- t3 = os.clock()
+	-- print(string.format("\t%d次常规词AC检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
 	printLine()
 	t2 = os.clock()
 	for i=1,count do
@@ -210,5 +210,5 @@ local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳�
 敏感词4费偷窥网, 敏感词5欧美大乳。]]
 -- local textString = ""
 TestCheck(textString, 1, 1)
-TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随。咳咳dasdad井空苍苍, 台台ott", 1000, 1)
+TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
 -- CheckRepetCfg()
