@@ -1,12 +1,18 @@
 -- 说明: Trie上的一个节点
 require("PreLoad")
 
-local Node = class("TrieNode")
+local Node = {}
+Node.__index = Node
 
-function Node:ctor(char)
+function Node.New()
+	local newObj = {}
+	setmetatable(newObj, Node)
+	return newObj
+end
+
+function Node:ctor()
 	self._isWord = false  
 	self._children = nil  -- 是k,v结构 childChar = ChildNode
-	self.char = char
 	self._failNode = nil  -- 失败指针
 end
 

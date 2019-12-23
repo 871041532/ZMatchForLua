@@ -7,7 +7,45 @@ local t3
 local count
 local r
 
+function EvalCfg()
+	--整理一下配置表
+	local cfgs = {}
+	for _,v in ipairs(g_SensitiveWordsCfg) do
+		table.insert(cfgs, v)
+	end
+
+	local sortFunc = function(v1, v2)
+		local chars1 = string.ConvertToCharArray(v1.word)
+		local chars2 = string.ConvertToCharArray(v2.word)
+		return #chars1 < #chars2
+	end
+	table.sort(cfgs, sortFunc)
+	g_SensitiveWordsCfg = cfgs
+end
+
 function InitTestEnvironment()
+	local c = collectgarbage("count")
+	for i=1,10000 do
+		local a = {}
+	end
+	local c1 = collectgarbage("count")
+	print("构建111: ", c1 - c)
+	local c = collectgarbage("count")
+	for i=1,10000 do
+		local a = {}
+		a.a = 1
+		a.xx = 5
+	end
+	local c1 = collectgarbage("count")
+	print("构建222: ", c1 - c)
+	local c = collectgarbage("count")
+	for i=1,10000 do
+		local a = {}
+		a[1] = 1
+		a[2] = 5
+	end
+	local c1 = collectgarbage("count")
+	print("构建222: ", c1 - c)
 	zmatch = ZMatch.New()
 	t1 = os.clock()
 	local c = collectgarbage("count")
@@ -48,7 +86,7 @@ function TestCheck(text, newWayCount, oldWayCOunt)
 	count = newWayCount
 	t2 = os.clock()
 	for i=1,count do
-		r = zmatch:CheckTextByAC(text)
+		r = zmatch:CheckText(text)
 	end
 	t3 = os.clock()
 	print(string.format("库接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
@@ -159,18 +197,18 @@ function CheckRepetCfg()
 	print(string.format("冗余配置:%d条", count))
 end
 
-
+EvalCfg()
 InitTestEnvironment()
 -- 测试敏感词检测
-TestCheck("正常说一句话的内容,大概这么长", 1000, 1)
-TestCheck("敏感词:苍井空-", 1000, 1)
-TestCheck("带&敏感词:kanzhongguo.com", 1000, 1)
+TestCheck("正常说一句话的内容,大概这么长", 1, 1)
+TestCheck("敏感词:苍井空-", 1, 1)
+TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
 local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
 小溪流泉映花彩, 松江孤岛一叶枫。
 南海涟波潭边杏, 敏感词1兼职上门
 敏感词2裤袜女优, 敏感词3泽铃木麻。
 敏感词4费偷窥网, 敏感词5欧美大乳。]]
 -- local textString = ""
-TestCheck(textString, 1000, 1)
+TestCheck(textString, 1, 1)
 TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随。咳咳dasdad井空苍苍, 台台ott", 1000, 1)
 -- CheckRepetCfg()

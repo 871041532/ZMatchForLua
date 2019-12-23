@@ -34,7 +34,7 @@ function ZMatch:BuildTrie()
 	self._havenBuildTrie = true
 
 	self.originCfg = g_SensitiveWordsCfg
-	for k,v in pairs(self.originCfg) do
+	for _,v in ipairs(self.originCfg) do
 		local strings = string.split(v.word, "&")
 		if #strings > 1 then
 			table.insert(self.multiList, strings)
