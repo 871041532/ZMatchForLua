@@ -1,6 +1,13 @@
 -- 说明: Trie上的一个节点
 require("PreLoad")
 
+-- Node包装类
+local NodeWarpper = {}
+
+-- [1] _isWord
+-- 
+
+
 local Node = {}
 Node.__index = Node
 
@@ -13,7 +20,6 @@ end
 function Node:ctor()
 	self._isWord = false  
 	self._children = nil  -- 是k,v结构 childChar = ChildNode
-	self._failNode = nil  -- 失败指针
 end
 
 function Node:AddChild(char)
