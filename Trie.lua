@@ -8,6 +8,7 @@ local Trie = class("Trie")
 function Trie:ctor()
 	self._root = Node.New()
 	self._extCheckFunc = nil
+	self.tempArray = {}
 end
 
 -- 拷贝构造函数
@@ -23,14 +24,15 @@ function Trie:SetExtCheckFunc(func)
 end
 
 function Trie:AddWord(word)
-	local chars = string.ConvertToCharArray(word)
+	local chars, num = string.ConvertToCharArray(word, self.tempArray)
 	local node = self._root
-	for i, char in ipairs(chars) do
+	for i=1,num do
+		local char = chars[i]
 		local child = node:GetChild(char)
 		if not child then
 			child = node:AddChild(char)
 		end
-		if i == #chars then
+		if i == num then
 			-- 单词的最后一个字标记为单词
 			child:MarkAsWord(true)
 		end

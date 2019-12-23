@@ -43,10 +43,11 @@ end
 
 -- 字符串转char数组函数
 -- 将lua utf8 字符串转换为Char数组
-function string.ConvertToCharArray(inputstr)
-	local array = {}
+function string.ConvertToCharArray(inputstr, reuseArray)
+    local num = 0
+	local array = reuseArray or {}
 	if not inputstr or type(inputstr) ~= "string" or #inputstr <= 0 then
-        return array
+        return array, num
     end
     local length = 0  -- 字符的个数
     local i = 1
@@ -63,12 +64,17 @@ function string.ConvertToCharArray(inputstr)
             byteCount = 1  -- 单字节字符
         end
         local char = string.sub(inputstr, i, i + byteCount - 1)
-        table.insert(array, char)
+        num = num + 1
+        if reuseArray then
+            array[num] = char
+        else
+            table.insert(array, char)
+        end
         i = i + byteCount
         length = length + 1
         if i > #inputstr then
             break
         end
     end
-    return array
+    return array, num
 end
