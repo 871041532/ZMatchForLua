@@ -27,6 +27,9 @@ function Trie:AddWord(word)
 	local chars, num = string.ConvertToCharArray(word, self.tempArray)
 	local node = self._root
 	for i=1,num do
+		if node._isWord then
+			return
+		end
 		local char = chars[i]
 		local child = node:GetChild(char)
 		if not child then

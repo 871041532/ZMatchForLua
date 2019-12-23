@@ -29,6 +29,19 @@ function class(name, super)
     return class_type
 end
 
+--不支持继承的class函数,构造函数只有一个参数
+function finalClassParam1(name)
+    local class_type = nil
+    class_type = {}
+    class_type.__index = class_type
+    class_type.New = function(param)
+        local instance = setmetatable({}, class_type)
+        instance:ctor(param)
+        return instance
+    end
+    return class_type
+end
+
 -- 字符串分割函数
 function string.split(str, delimiter)
 	if str==nil or str=='' or delimiter==nil then
