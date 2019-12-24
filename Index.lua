@@ -249,12 +249,66 @@ function TableToStr(t)
     return retstr
 end
 
+local writeFile = function(key, strs)
+	local file = io.open("SensitiveConfig/"..key, "w")
+	io.output(file)
+	io.write(strs)
+	io.close(file)
+end
 
-local strs = TableToStr(offlineData)
-strs = "a = "..strs
-local file = io.open("GenerateTable.lua", "w")
-io.output(file)
-io.write(strs)
-io.close(file)
+local returnData = {}
+local allcfgs = {}
 
-return offlineData
+for k,v in pairs(offlineData) do
+	if k ~= "singleTrieRoot" then
+		local key = k..".lua"
+		returnData[key] = v
+		local strs = TableToStr(v)
+		strs = "local temp = "..strs.."\nreturn temp"
+		writeFile(key, strs)
+	else
+		local str1 = TableToStr(v)
+		str1 = "local temp = "..str1.."\nreturn temp"
+		local key1 = k..".lua"
+		writeFile(key1, str1)
+
+		local count = 1
+		local num = 1
+		local tables = {}
+		for k2,v2 in pairs(offlineData.singleTrieRoot[1]) do
+			tables[k2] = v2
+			num = num + 1
+			if num > 3000 then
+				local key = "single_"..count..".lua"
+				returnData[key] = tables
+				local strs = TableToStr(tables)
+				strs = "local temp = "..strs.."\nreturn temp"
+				writeFile(key, strs)
+				count = count + 1
+				num = 1
+				tables = {}
+			end
+		end
+		if num ~= 1 then
+			local key = "single_"..count..".lua"
+			returnData[key] = tables
+			local strs = TableToStr(tables)
+			strs = "local temp = "..strs.."\nreturn temp"
+			writeFile(key, strs)
+			allcfgs.lastNum = num
+		end
+		allcfgs.count = count
+		returnData["AllConfig"] = allcfgs
+		local strs = TableToStr(allcfgs)
+		strs = "local temp = "..strs.."\nreturn temp"
+		writeFile("AllConfig.lua", strs)
+	end
+end
+
+local a = 1
+for k,v in pairs(offlineData.singleTrieRoot[1]) do
+	a = a + 1
+end
+print(a)
+
+return returnData

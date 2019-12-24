@@ -1,8 +1,8 @@
 -- 说明: 封装一下敏感词查找的接口
 require("PreLoad")
-if not gdSensitiveWordsSensitiveWords then
-	require("SensitiveWordsCfg")
-end
+-- if not gdSensitiveWordsSensitiveWords then
+-- 	require("SensitiveWordsCfg")
+-- end
 local Trie = require("Trie")
 local FilterTrie = require("FilterTrie")
 local MultiTrie = require("MultiTrie")
