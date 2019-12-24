@@ -1,6 +1,8 @@
 -- 说明: 封装一下敏感词查找的接口
 require("PreLoad")
-require("SensitiveWordsCfg")
+if not gdSensitiveWordsSensitiveWords then
+	require("SensitiveWordsCfg")
+end
 local Trie = require("Trie")
 local FilterTrie = require("FilterTrie")
 local MultiTrie = require("MultiTrie")
@@ -27,13 +29,13 @@ end
 
 -------------------外部Trie查找接口---------------------------
 -- 必须先BuildTrie再check或filter才有效
-function ZMatch:BuildTrie()
+function ZMatch:BuildTrie(cfgs)
 	if self._havenBuildTrie then
 		return
 	end
 	self._havenBuildTrie = true
 
-	self.originCfg = g_SensitiveWordsCfg
+	self.originCfg = cfgs or gdSensitiveWordsSensitiveWords
 	for _,v in ipairs(self.originCfg) do
 		local strings = string.split(v.word, "&")
 		if #strings > 1 then
@@ -44,6 +46,37 @@ function ZMatch:BuildTrie()
 			self.singleTrie:AddWord(strings[1])
 		end
 	end
+end
+
+function ZMatch:BuildTreeByOfflineData(offlineData)
+	if self._havenBuildTrie then
+		return
+	end
+	self._havenBuildTrie = true
+
+	self.singleTrie = Trie.New()
+	self.singleTrie._root = offlineData.singleTrieRoot
+	self.filterTrie = FilterTrie.New(self.singleTrie)
+
+	self._multiTrie = MultiTrie.New()
+	self._multiTrie._trie._root = offlineData.multiTrieRoot
+	self._multiTrie._wordTileMap = offlineData.multiWordTileMap
+	self._multiTrie._WordTileList = offlineData.multiWordTileList
+	self._multiFilterTrie = MultiFilterTrie.New(self._multiTrie)
+end
+
+function ZMatch:GetOffLineData()
+	local singleTrieRoot = self.singleTrie._root
+	local multiTrieRoot = self._multiTrie._trie._root
+	local multiWordTileMap = self._multiTrie._wordTileMap
+	local multiWordTileList = self._multiTrie._WordTileList
+	local offlineData = {
+		singleTrieRoot = singleTrieRoot,
+		multiTrieRoot = multiTrieRoot,
+		multiWordTileMap = multiWordTileMap,
+		multiWordTileList = multiWordTileList,
+	}
+	return offlineData
 end
 
 -- 通用接口, 使用Trie检测屏蔽字

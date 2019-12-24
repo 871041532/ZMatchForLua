@@ -10,7 +10,7 @@ local r
 function EvalCfg()
 	--整理一下配置表
 	local cfgs = {}
-	for _,v in ipairs(g_SensitiveWordsCfg) do
+	for _,v in ipairs(gdSensitiveWordsSensitiveWords) do
 		table.insert(cfgs, v)
 	end
 
@@ -20,32 +20,10 @@ function EvalCfg()
 		return #chars1 < #chars2
 	end
 	table.sort(cfgs, sortFunc)
-	g_SensitiveWordsCfg = cfgs
+	gdSensitiveWordsSensitiveWords = cfgs
 end
 
 function InitTestEnvironment()
-	local c = collectgarbage("count")
-	for i=1,10000 do
-		local a = {}
-	end
-	local c1 = collectgarbage("count")
-	print("构建111: ", c1 - c)
-	local c = collectgarbage("count")
-	for i=1,10000 do
-		local a = {}
-		a.a = 1
-		a.xx = 5
-	end
-	local c1 = collectgarbage("count")
-	print("构建222: ", c1 - c)
-	local c = collectgarbage("count")
-	for i=1,10000 do
-		local a = {}
-		a[1] = 1
-		a[2] = 5
-	end
-	local c1 = collectgarbage("count")
-	print("构建222: ", c1 - c)
 	zmatch = ZMatch.New()
 	t1 = os.clock()
 	local c = collectgarbage("count")
@@ -200,6 +178,23 @@ end
 EvalCfg()
 InitTestEnvironment()
 -- 测试敏感词检测
+-- TestCheck("正常说一句话的内容,大概这么长", 1, 1)
+-- TestCheck("敏感词:苍井空-", 1, 1)
+-- TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
+-- local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
+-- 小溪流泉映花彩, 松江孤岛一叶枫。
+-- 南海涟波潭边杏, 敏感词1兼职上门
+-- 敏感词2裤袜女优, 敏感词3泽铃木麻。
+-- 敏感词4费偷窥网, 敏感词5欧美大乳。]]
+-- TestCheck(textString, 1, 1)
+-- TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
+
+local offlineData = zmatch:GetOffLineData()
+
+local zmatch2 = ZMatch.New()
+zmatch2:BuildTreeByOfflineData(offlineData)
+zmatch = zmatch2
+-- 测试敏感词检测
 TestCheck("正常说一句话的内容,大概这么长", 1, 1)
 TestCheck("敏感词:苍井空-", 1, 1)
 TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
@@ -208,7 +203,58 @@ local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳�
 南海涟波潭边杏, 敏感词1兼职上门
 敏感词2裤袜女优, 敏感词3泽铃木麻。
 敏感词4费偷窥网, 敏感词5欧美大乳。]]
--- local textString = ""
 TestCheck(textString, 1, 1)
 TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
--- CheckRepetCfg()
+
+function ToStringEx(value)
+    if type(value)=='table' then
+        return TableToStr(value)
+    elseif type(value)=='string' then
+        return "\'"..value.."\'"
+    else
+        return tostring(value)
+    end
+end
+
+--使用的时候是这个
+function TableToStr(t)
+    if t == nil then return "" end
+    local retstr= "{"
+
+    local i = 1
+    for key,value in pairs(t) do
+        local signal = ","
+        if i==1 then
+            signal = ""
+        end
+
+        if key == i then
+            retstr = retstr..signal..ToStringEx(value)
+        else
+            if type(key)=='number' or type(key) == 'string' then
+                retstr = retstr..signal..'['..ToStringEx(key).."]="..ToStringEx(value)
+            else
+                if type(key)=='userdata' then
+                    retstr = retstr..signal.."*s"..TableToStr(getmetatable(key)).."*e".."="..ToStringEx(value)
+                else
+                    retstr = retstr..signal..key.."="..ToStringEx(value)
+                end
+            end
+        end
+
+        i = i+1
+    end
+
+    retstr = retstr.."}"
+    return retstr
+end
+
+
+local strs = TableToStr(offlineData)
+strs = "a = "..strs
+local file = io.open("GenerateTable.lua", "w")
+io.output(file)
+io.write(strs)
+io.close(file)
+
+return offlineData

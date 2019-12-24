@@ -1,0 +1,5 @@
+local c = collectgarbage("count")
+require("GenerateTable")
+collectgarbage("collect")
+local c1 = collectgarbage("count")
+print("构建GenerateTable内存:", c1 - c)
