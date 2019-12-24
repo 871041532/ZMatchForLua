@@ -1,5 +1,5 @@
 local ZMatch = require("ZMatch")
-
+require("SensitiveWordsCfg")
 local zmatch
 local t1
 local t2
@@ -309,6 +309,6 @@ local a = 1
 for k,v in pairs(offlineData.singleTrieRoot[1]) do
 	a = a + 1
 end
-print(a)
+print(returnData["multiWordTileMap.lua"].com[1].kanzhongguo)
 
 return returnData

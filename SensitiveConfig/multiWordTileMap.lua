@@ -1,2 +1,2 @@
-local temp = {['kanzhongguo']={{['__curMatchNum']=0,['com']=4,['kanzhongguo']=4,['__matchedData']={},['__num']=2}},['com']={{['__curMatchNum']=0,['com']=4,['kanzhongguo']=4,['__matchedData']={},['__num']=2}}}
+local temp = {['kanzhongguo']={{['__curMatchNum']=0,['com']=3,['kanzhongguo']=3,['__matchedData']={},['__num']=2}},['com']={{['__curMatchNum']=0,['com']=3,['kanzhongguo']=3,['__matchedData']={},['__num']=2}}}
 return temp
