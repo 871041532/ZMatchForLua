@@ -1,2 +1,2 @@
-local temp = {['count']=1,['lastNum']=2890}
+local temp = {['count']=6,['lastNum']=390}
 return temp

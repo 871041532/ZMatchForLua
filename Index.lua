@@ -275,10 +275,12 @@ for k,v in pairs(offlineData) do
 		local count = 1
 		local num = 1
 		local tables = {}
-		for k2,v2 in pairs(offlineData.singleTrieRoot[1]) do
+		local sortKeys = table.getSortKeys(offlineData.singleTrieRoot[1])
+		for _,k2 in ipairs(sortKeys) do
+			local v2 = offlineData.singleTrieRoot[1][k2]
 			tables[k2] = v2
 			num = num + 1
-			if num > 3000 then
+			if num > 500 then
 				local key = "single_"..count..".lua"
 				returnData[key] = tables
 				local strs = TableToStr(tables)
@@ -298,7 +300,7 @@ for k,v in pairs(offlineData) do
 			allcfgs.lastNum = num
 		end
 		allcfgs.count = count
-		returnData["AllConfig"] = allcfgs
+		returnData["AllConfig.lua"] = allcfgs
 		local strs = TableToStr(allcfgs)
 		strs = "local temp = "..strs.."\nreturn temp"
 		writeFile("AllConfig.lua", strs)
@@ -309,6 +311,7 @@ local a = 1
 for k,v in pairs(offlineData.singleTrieRoot[1]) do
 	a = a + 1
 end
-print(returnData["multiWordTileMap.lua"].com[1].kanzhongguo)
+
+-- print(returnData["multiWordTileMap.lua"].com[1].kanzhongguo)
 
 return returnData

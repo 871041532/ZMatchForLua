@@ -91,3 +91,30 @@ function string.ConvertToCharArray(inputstr, reuseArray)
     end
     return array, num
 end
+
+local logSwitch = true
+-- 日志统一输出接口
+function ZMatchPrint(param)
+    if logSwitch then
+        print(param)
+    end
+end
+
+-- 获取table表排序后的数据
+function table.getSortKeys(paramTable) 
+    local sortKeys = {}
+    local sortKeyFun = function(a,b)
+        if type(a) ~= type(b) then
+            return type(a) < type(b)
+        end
+        if type(a) == "number" then
+            return a < b
+        end
+        return tostring(a) < tostring(b)
+    end
+    for k,v in pairs(paramTable) do
+        table.insert(sortKeys, k)
+    end
+    table.sort(sortKeys, sortKeyFun)
+    return sortKeys
+end

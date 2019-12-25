@@ -37,5 +37,5 @@ local ZMatch = require("ZMatch")
 zmatch = ZMatch.New()
 zmatch:BuildTrie()
 local c1 = collectgarbage("count")
-print("构建SensitiveWordsCfg 2内存:", c1 - c)
+print("动态构建内存:", c1 - c)
 
