@@ -10,7 +10,7 @@ local r
 function EvalCfg()
 	--整理一下配置表
 	local cfgs = {}
-	for _,v in ipairs(gdSensitiveWordsSensitiveWords) do
+	for _,v in pairs(gdSensitiveWordsSensitiveWords) do
 		table.insert(cfgs, v)
 	end
 
@@ -60,7 +60,7 @@ function TestCheck(text, newWayCount, oldWayCOunt)
 		r = zmatch:_CheckAllByTraverse(text)
 	end
 	t3 = os.clock()
-	print(string.format("原始遍历接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
+	-- print(string.format("原始遍历接口%d次全词检测,时间:%f,结果:%s", count, t3 - t2, r and "true" or "false"))
 	count = newWayCount
 	t2 = os.clock()
 	for i=1,count do
