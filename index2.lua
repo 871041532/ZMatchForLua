@@ -39,3 +39,5 @@ zmatch:BuildTrie()
 local c1 = collectgarbage("count")
 print("动态构建内存:", c1 - c)
 
+local bit = require("bit")
+print({3, 2, 5}[-1])

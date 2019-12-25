@@ -1,4 +1,13 @@
+require("Preload")
+local bit = require("bit")
 
+-- 敏感词实体类
+local BadWordEntity = {}
+function BadWordEntity.New()
+	return {
+		BadWord = {}  --char数组
+	}
+end
 
 local DirtyWordFilter = class("DirtyWordFilter")
 
@@ -21,127 +30,128 @@ function DirtyWordFilter:ctor()
 	self.minWordLength = IntMaxValue  -- int
 	self._replaceString = "*"  -- string
 	self._fastReplaces = {}  -- string[16]
-	for i=1,16 do
-		table.insert(self._fastReplaces, nil)
-	end
+	self:ResetMaxLength(16)
 	self._newWord = ""  -- string
-
-
 end
 
+function DirtyWordFilter:ResetMaxLength(length)
+	self._fastReplaces = {}  -- string[x]
+	for i=1,length do
+		table.insert(self._fastReplaces, {})
+	end
+end
+
+-- 初始化数据,将List集合类型敏感词放入HashSet中
+function DirtyWordFilter:Init(badwords)  -- List<BadWordEntity>
+	for _,word in ipairs(badwords) do
+		self.maxWordLength = math.max (self.maxWordLength, #word.BadWord)
+		self.minWordLength = math.min (self.minWordLength, #word.BadWord)
+
+		for i=1,7 do
+			if i > #word.BadWord then
+				break
+			end
+			local charEncode = string.byte(word.BadWord[i], 1)
+			local number = self.fastCheck[charEncode]
+			self.fastCheck[charEncode] = bit.bor(number, bit.lshift(1, i-1))
+		end
+
+		for i=8,#word.BadWord do
+			local charEncode = string.byte(word.BadWord[i], 1)
+			local number = self.fastCheck[charEncode]
+			self.fastCheck[charEncode] = bit.bor(number, IntMaxValue + 1)
+		end
+			
+		if #word.BadWord == 1 then
+			local charEncode = string.byte(word.BadWord[1], 1)
+			local number = self.charCheck[charEncode]
+			self.charCheck[charEncode] = true
+		else
+			local charEncode = string.byte(word.BadWord[1], 1)
+			local number = self.fastLength[charEncode]
+			local shift = math.min (7, #word.BadWord.Length - 2)
+			self.fastLength[charEncode] = bit.bor(number, bit.lshift(1, shift))
+
+			local endCharEncode = string.byte(word.BadWord[#word.BadWord], 1)
+			self.endCheck[endCharEncode] = true
+		end
+	end
+end
+
+-- 初始化数据,将String[]类型敏感词放入HashSet中
+function DirtyWordFilter:InitStringArray(strings, type)  --string[] int
+	for _,s in ipairs(strings) do
+		InitString(s, type)
+	end
+end
+
+function DirtyWordFilter:InitString(s, type)
+	local word = string.ConvertToCharArray(s)
+	local wordLength = #word
+	local cc = self._replaceString[1]
+	local first = word[1]
+	if #self._fastReplaces > wordLength and #self._fastReplaces[wordLength + 1] == 0 then
+		for i=1,wordLength do
+			table.insert(self._fastReplaces[wordLength + 1], cc)
+		end
+		self._fastReplaces[wordLength + 1] = 
+	end
+	self.maxWordLength = math.max(self.maxWordLength, wordLength);
+	self.minWordLength = math.min (self.minWordLength, wordLength);
+
+	for i=1,7 do
+		if i > wordLength then
+			break
+		end
+		local charEncode = string.byte(word[i], 1)
+		local number = self.fastCheck[charEncode]
+		self.fastCheck[charEncode] = bit.bor(number, bit.lshift(1, i-1))
+	end
+
+	for i=8,wordLength do
+		local charEncode = string.byte(word[i], 1)
+		local number = self.fastCheck[charEncode]
+		self.fastCheck[charEncode] = bit.bor(number, IntMaxValue + 1)
+	end
+
+	if wordLength == 1 then
+		local charEncode = string.byte(first, 1)
+		local number = self.charCheck[charEncode]
+		self.charCheck[charEncode] = true
+	else
+		local charEncode = string.byte(first, 1)
+		local number = self.fastLength[charEncode]
+		local shift = math.min (7, wordLength - 2)
+		self.fastLength[charEncode] = bit.bor(number, bit.lshift(1, shift))
+
+		local endCharEncode = string.byte(word[#word], 1)
+		self.endCheck[endCharEncode] = true
+	end
+
+	if self.hash[s] == nil then
+		self.hash[s] = type
+	else
+		self.hash[s] = bit.bor(self.hash[s], type)
+	end
+end
+
+-- 检查是否有敏感词
+function DirtyWordFilter:HasBadWord(text, types)
+	local result = self:SearchBadWord(text, types)
+	return result != -1
+end
+
+-- 查找敏感词的索引位置
+function DirtyWordFilter:SearchBadWord(text, types)
+end
+
+-- 替换敏感词
+function DirtyWordFilter:ReplaceBadWord(text, types)
+end
 
 public class DirtyWordFilter
 {
 
-
-	
-	public void ResetMaxLength(int length)
-	{
-		if(length != null && length > 0)
-			_fastReplaces = new string[length];
-	}
-	
-	#region 初始化数据,将List集合类型敏感词放入HashSet中
-	/// <summary>
-	/// 初始化数据,将敏感词放入HashSet中
-	/// </summary>
-	/// <param name="badwords"></param>
-	[DoNotToLua]
-	public void Init (List<BadWordEntity> badwords)
-	{
-		foreach (BadWordEntity word in badwords) {
-			maxWordLength = Math.Max (maxWordLength, word.BadWord.Length);
-			minWordLength = Math.Min (minWordLength, word.BadWord.Length);
-			for (int i = 0; i < 7 && i < word.BadWord.Length; i++) {
-				fastCheck [word.BadWord [i]] |= (byte)(1 << i);
-			}
-			
-			for (int i = 7; i < word.BadWord.Length; i++) {
-				fastCheck [word.BadWord [i]] |= 0x80;
-			}
-			
-			if (word.BadWord.Length == 1) {
-				charCheck [word.BadWord [0]] = true;
-			} else {
-				fastLength [word.BadWord [0]] |= (byte)(1 << (Math.Min (7, word.BadWord.Length - 2)));
-				endCheck [word.BadWord [word.BadWord.Length - 1]] = true;
-			}
-		}
-	}
-	
-	#endregion
-	
-	
-	#region 初始化数据,将String[]类型敏感词放入HashSet中
-	/// <summary>
-	/// 初始化数据,将敏感词放入HashSet中
-	/// </summary>
-	/// <param name="badwords"></param>
-	public void InitStringArray (string[] badwords, int type)
-	{
-		foreach (string word in badwords) {
-			InitString(word,type);
-		}
-	}
-	
-	#endregion
-
-	#region 初始化数据,将String[]类型敏感词放入HashSet中
-	/// <summary>
-	/// 初始化数据,将敏感词放入HashSet中
-	/// </summary>
-	/// <param name="badwords"></param>
-	public void InitString (string word, int type)
-	{
-		int wordLength = word.Length;
-		char cc = _replaceString [0];
-		char first = word [0];
-		if (_fastReplaces.Length > wordLength && _fastReplaces [wordLength] == null) {
-			_fastReplaces [wordLength] = _replaceString.PadRight (wordLength, cc);
-		}
-		maxWordLength = Math.Max (maxWordLength, wordLength);
-		minWordLength = Math.Min (minWordLength, wordLength);
-		for (int i = 0; i < 7 && i < wordLength; i++) {
-			fastCheck [word [i]] |= (byte)(1 << i);
-		}
-			
-		for (int i = 7; i < wordLength; i++) {
-			fastCheck [word [i]] |= 0x80;
-		}
-			
-		if (word.Length == 1) {
-			charCheck [first] = true;
-		} else {
-			fastLength [first] |= (byte)(1 << (Math.Min (7, word.Length - 2)));
-			endCheck [word [word.Length - 1]] = true;
-		}
-		if (hash.ContainsKey (word) == false)
-			hash.Add (word, type);
-		else {
-			hash [word] |= type;
-		}
-	}
-	
-	#endregion
-	
-	
-	
-	#region 检查是否有敏感词
-	/// <summary>
-	/// 检查是否有敏感词
-	/// </summary>
-	/// <param name="text"></param>
-	/// <returns></returns>
-	public bool HasBadWord (string text, int types)
-	{
-		return SearchBadWord (text, types) != -1;
-	}
-
-	/// <summary>
-	/// 查找敏感词的索引位置
-	/// </summary>
-	/// <param name="text"></param>
-	/// <returns></returns>
 	public int SearchBadWord (string text, int types)
 	{
 		int index = 0;
@@ -184,16 +194,7 @@ public class DirtyWordFilter
 		return -1;
 	}
 	
-	#endregion
 	
-	
-	
-	#region 替换敏感词
-	/// <summary>
-	/// 替换敏感词
-	/// </summary>
-	/// <param name="text"></param>
-	/// <returns></returns>
 	public string ReplaceBadWord (string text, int types)
 	{
 		int index = 0;
@@ -238,19 +239,5 @@ public class DirtyWordFilter
 		_newWord = text;
 		return text;
 	}
-	#endregion
-}
 
-#region 敏感词实体类
-/// <summary>
-/// 敏感词实体
-/// </summary>
-public class BadWordEntity
-{
-	/// <summary>
-	/// 敏感词
-	/// </summary>
-	public string BadWord { get; set; }
-}
 
-#endregion
