@@ -68,17 +68,22 @@ function InitTestEnvironment()
 	collectgarbage("collect")
 	local c = collectgarbage("count")
 	local cfgs = require("SensitiveMultiCfg")
+	local cfgs2 = {}
+	for k,v in pairs(cfgs) do
+		table.insert(cfgs2, v.word)
+	end
 	collectgarbage("collect")
 	local c1 = collectgarbage("count")
 	print("配置表内存:", c1 - c)
 	local t1 = os.clock()
 	zmatch = ZMatch.New()
-	zmatch:BuildMultiTree(cfgs)
+	zmatch:ReBuildExtMultiTree(cfgs2)
 	local t2 = os.clock()
 	collectgarbage("collect")
 	local c2 = collectgarbage("count")
 	print("构建Trie内存:", c2 - c1)
 	cfgs = nil
+	cfgs2 = nil
 	collectgarbage("collect")
 	local c3 = collectgarbage("count")
 	print("常驻总内存:", c3 - c)
@@ -94,7 +99,7 @@ function TestCheck(text, count)
 	print(string.format("\n开始对【%s】进行敏感词检测...", text))
 	local t2 = os.clock()
 	for i=1,count do
-		r = zmatch._multiTrie:CheckTextMatched(text)
+		r = zmatch:CheckText(text)
 	end
 	local t3 = os.clock()
 	print(string.format("\t%d次模糊,时间%f,结果%s", count, t3 - t2, r and "true" or "false"))
@@ -160,7 +165,7 @@ end
 
 InitTestEnvironment()
 -- CheckRepetCfg()
-TestCheck("1六1四1要1平1反1", 100)
+TestCheck("123六123四123要123平123反123", 100)
 TestCheck("苍井空", 100)
 TestCheck("正常说一句话的内容大概这么长...", 100)
 TestCheck("1111111111.1111111111.1111111111.1111111111.1111111111", 100)

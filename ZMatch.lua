@@ -49,9 +49,10 @@ function ZMatch:BuildTrie(cfgs)
 	end
 end
 
-function ZMatch:BuildMultiTree(cfgs)
-	for k,v in pairs(cfgs) do
-		local chars = string.ConvertToCharArray(v.word)
+-- 根据新的规则重新构建构建MultiTree
+function ZMatch:ReBuildExtMultiTree(cfgs)
+	for _,v in ipairs(cfgs) do
+		local chars = string.ConvertToCharArray(v)
 		self._multiTrie:AddWordsItem(chars)
 		self.multiItemCount = self.multiItemCount + 1
 	end
@@ -67,11 +68,11 @@ function ZMatch:BuildTreeByOfflineData(offlineData)
 	self.singleTrie._root = offlineData.singleTrieRoot
 	self.filterTrie = FilterTrie.New(self.singleTrie)
 
-	self._multiTrie = MultiTrie.New()
-	self._multiTrie._trie._root = offlineData.multiTrieRoot
-	self._multiTrie._wordTileMap = offlineData.multiWordTileMap
-	self._multiTrie._WordTileList = offlineData.multiWordTileList
-	self._multiFilterTrie = MultiFilterTrie.New(self._multiTrie)
+	-- self._multiTrie = MultiTrie.New()
+	-- self._multiTrie._trie._root = offlineData.multiTrieRoot
+	-- self._multiTrie._wordTileMap = offlineData.multiWordTileMap
+	-- self._multiTrie._WordTileList = offlineData.multiWordTileList
+	-- self._multiFilterTrie = MultiFilterTrie.New(self._multiTrie)
 end
 
 function ZMatch:GetOffLineData()
@@ -81,9 +82,9 @@ function ZMatch:GetOffLineData()
 	local multiWordTileList = self._multiTrie._WordTileList
 	local offlineData = {
 		singleTrieRoot = singleTrieRoot,
-		multiTrieRoot = multiTrieRoot,
-		multiWordTileMap = multiWordTileMap,
-		multiWordTileList = multiWordTileList,
+		-- multiTrieRoot = multiTrieRoot,
+		-- multiWordTileMap = multiWordTileMap,
+		-- multiWordTileList = multiWordTileList,
 	}
 	return offlineData
 end
