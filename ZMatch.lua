@@ -25,6 +25,7 @@ function ZMatch:ctor()
 
 	self._havenBuildTrie = false
 	self._havenBuildAc = false
+	self.multiItemCount = 0
 end
 
 -------------------外部Trie查找接口---------------------------
@@ -45,6 +46,14 @@ function ZMatch:BuildTrie(cfgs)
 			self.singleCount = self.singleCount + 1
 			self.singleTrie:AddWord(strings[1])
 		end
+	end
+end
+
+function ZMatch:BuildMultiTree(cfgs)
+	for k,v in pairs(cfgs) do
+		local chars = string.ConvertToCharArray(v.word)
+		self._multiTrie:AddWordsItem(chars)
+		self.multiItemCount = self.multiItemCount + 1
 	end
 end
 

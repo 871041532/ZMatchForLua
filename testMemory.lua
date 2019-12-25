@@ -51,7 +51,6 @@ collectgarbage("collect")
 collectgarbage("collect")
 local c2 = collectgarbage("count")
 print("构建patch内存:", c2 - c1)
-zmatch:CheckText("111")
 
 local c1 = collectgarbage("count")
 local cfgs = require("SensitiveConfig/singleTrieRoot")

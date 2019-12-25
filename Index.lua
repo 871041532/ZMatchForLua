@@ -195,7 +195,8 @@ local zmatch2 = ZMatch.New()
 zmatch2:BuildTreeByOfflineData(offlineData)
 zmatch = zmatch2
 -- 测试敏感词检测
-TestCheck("正常说一句话的内容,大概这么长", 1, 1)
+TestCheck("正常正常正常正常正常正常正常正常", 1, 1)
+TestCheck("正常说一句的内容，大概这么长...", 1, 1)
 TestCheck("敏感词:苍井空-", 1, 1)
 TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
 local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
