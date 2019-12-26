@@ -68,16 +68,12 @@ function InitTestEnvironment()
 	collectgarbage("collect")
 	local c = collectgarbage("count")
 	local cfgs = require("SensitiveMultiCfg")
-	local cfgs2 = {}
-	for k,v in pairs(cfgs) do
-		table.insert(cfgs2, v.word)
-	end
 	collectgarbage("collect")
 	local c1 = collectgarbage("count")
 	print("配置表内存:", c1 - c)
 	local t1 = os.clock()
 	zmatch = ZMatch.New()
-	zmatch:ReBuildExtMultiTree(cfgs2)
+	zmatch:ReBuildExtMultiTree(cfgs)
 	local t2 = os.clock()
 	collectgarbage("collect")
 	local c2 = collectgarbage("count")
@@ -163,9 +159,35 @@ function CheckRepetCfg()
 	io.close(file)
 end
 
+
+function TestFilter(text, newWayCount)
+	local count = newWayCount
+	local t2 = os.clock()
+	for i=1,count do
+		r = zmatch:FilterText(text)
+	end
+	local t3 = os.clock()
+	print(string.format("\n\n%d次敏感词过滤,时间:%f,\n--源:【%s】\n--结果:【%s】", count, t3 - t2, text, r))
+	local chars = string.ConvertToCharArray(text)
+	t2 = os.clock()
+	for i=1,count do
+		chars = zmatch:_FilterSingleChars(chars)
+	end
+	t3 = os.clock()
+	print(string.format("\t%d次常规词过滤,时间%f", count, t3 - t2))
+
+	t2 = os.clock()
+	for i=1,count do
+		chars = zmatch:_FilterMultiChars(chars)
+	end
+	t3 = os.clock()
+	print(string.format("\t%d次带&词过滤,时间%f", count, t3 - t2))
+end
+
 InitTestEnvironment()
 -- CheckRepetCfg()
 TestCheck("123六123四123要123平123反123", 100)
+TestFilter("香港是中国的", 100)
 TestCheck("苍井空", 100)
 TestCheck("正常说一句话的内容大概这么长...", 100)
 TestCheck("1111111111.1111111111.1111111111.1111111111.1111111111", 100)
