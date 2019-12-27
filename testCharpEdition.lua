@@ -14,6 +14,7 @@ function InitTestEnvironment()
 	dirtyFilter = LibraryFilter.New()
 	dirtyFilter:InitByCfgs(cfgs)
 	dirtyFilter:InitStringArray({"abcdefghijklmn"})
+	dirtyFilter.aa = {}
 	local t2 = os.clock()
 	collectgarbage("collect")
 	local c2 = collectgarbage("count")
