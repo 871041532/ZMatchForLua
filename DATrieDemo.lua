@@ -85,6 +85,7 @@ function DAT:Test()
 		local s = string.format("检测【%s】,结果%s",text, r)
 		print(s)
 	end
+	test("badgerr")
 end
 
 function DAT:_getTailCodeLength(start)
