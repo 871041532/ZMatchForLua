@@ -98,7 +98,7 @@ function DAT:Test()
 		local s = string.format("检测【%s】,结果%s",text, r)
 		print(s)
 	end
-	-- test("babe")
+	-- test("badge")
 end
 
 function DAT:_getTailCodeLength(start)
@@ -131,8 +131,8 @@ function DAT:_ConvertCharArrayToInputCode(charArray)
 		end
 	end
 	table.insert(intputCode, self.endCode)
-	print(charArray[1], charArray[2],charArray[3],charArray[4], charArray[5], charArray[6], charArray[7],charArray[8],charArray[9])
-	print(intputCode[1], intputCode[2],intputCode[3],intputCode[4], intputCode[5], intputCode[6], intputCode[7],intputCode[8],intputCode[9])
+	-- print(charArray[1], charArray[2],charArray[3],charArray[4], charArray[5], charArray[6], charArray[7],charArray[8],charArray[9])
+	-- print(intputCode[1], intputCode[2],intputCode[3],intputCode[4], intputCode[5], intputCode[6], intputCode[7],intputCode[8],intputCode[9])
 	return intputCode
 end
 
@@ -191,7 +191,7 @@ function DAT:_ExpandBaseAndCheck(count)
 end
 
 function DAT:_GetVaildTailOffset(childrenCode)
-	local offset = 0
+	local offset = 1
 	local found = false
 	while not found do
 		local ok = true
@@ -212,6 +212,9 @@ function DAT:_GetVaildTailOffset(childrenCode)
 	return offset
 end
 
+function function_name( ... )
+	-- body
+end
 -- 左移，起始index，总长度，左移偏移量
 function DAT:_LeftShiftTail(startIndex, length, offset)
 	for i=startIndex, length-offset do
@@ -229,6 +232,15 @@ function DAT:_GetChildren(fatherIndex)
 	return children
 end
 
+-- 将某个节点的所有子节点的父节点都设置为新值
+function DAT:_ChangeChildrenFather(oldFather, newFather)
+	for i=1,#self.check do
+		if self.check[i] == oldFather then
+			self.check[i] = newFather
+		end
+	end
+end
+
 -- 处理冲突，自行移动。index位置将要插入新元素，需要解决冲突
 function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 	-- 判断移动leader需要移动几个元素
@@ -237,7 +249,6 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 	-- 判断移动冲突confiltcIndex需要移动几个元素
 	local conflictLeader = self.check[conflictIndex]
 	local conflictChildren = self:_GetChildren(conflictLeader)
-
 	if #children < #conflictChildren then
 		-- 使用第一种移动方式, 移动当前节点的父节点，解决冲突
 		local childrenCode = {}
@@ -248,26 +259,49 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 		local vaildOffset = self:_GetVaildTailOffset(childrenCode)
 		self.base[leaderIndex] = vaildOffset
 		for i=1,#children do
+			-- 将当前节点移动位置
 			local curIndex = children[i]
 			local childCode = childrenCode[i]
 			local baseValue1 = self.base[curIndex]
 			local checkValue1 = self.check[curIndex]
-
 			local targetIndex = vaildOffset + childCode
 			self.base[targetIndex] = baseValue1
 			self.check[targetIndex] = checkValue1
-
 			self.base[curIndex] = 0
 			self.check[curIndex] = 0
+			-- 将当前节点的子节点的父节点，指向新位置
+			self:_ChangeChildrenFather(curIndex, targetIndex)
 		end
 	else
-		-- 使用第二种方式
+		-- 使用第二种方式，移动conflictIndex所在节点index，兄弟节点index，以及父节点base值
+		local conflictChildrenCode = {}
+		for _,v in ipairs(conflictChildren) do
+			local code = v - self.base[self.check[v]] 
+			table.insert(conflictChildrenCode, code)
+		end
+		local vaildOffset = self:_GetVaildTailOffset(conflictChildrenCode)
+		self.base[conflictLeader] = vaildOffset
+		for i=1,#conflictChildren do
+			-- 将当前节点移动位置
+			local curIndex = conflictChildren[i]
+			local childCode = conflictChildrenCode[i]
+			local baseValue1 = self.base[curIndex]
+			local checkValue1 = self.check[curIndex]
+			local targetIndex = vaildOffset + childCode
+			self.base[targetIndex] = baseValue1
+			self.check[targetIndex] = checkValue1
+			self.base[curIndex] = 0
+			self.check[curIndex] = 0
+			-- 将当前节点的子节点的父节点指针，指向新位置
+			self:_ChangeChildrenFather(curIndex, targetIndex)
+		end
+
 	end
 end
 
 -- 参数必须是经过排序后的字符串数组，然后又转成二维字符数组
 function DAT:_AddSortingChars(chars, idx)
-	self:Test()
+	-- self:Test()
 	local intputCode = self:_ConvertCharArrayToInputCode(chars)
 	-- 这个字符串本来就是屏蔽字，什么都不做
 	if self:_TrieSearchByEncodeArray(intputCode) then
@@ -286,7 +320,7 @@ function DAT:_AddSortingChars(chars, idx)
 			self.tail[#self.tail + 1] = self.sliceCode
 		else
 			-- 此处check不为空，需要处理冲突
-			print("此处check不为空，需要处理冲突")
+			-- print("此处check不为空，需要处理冲突")
 			self:_ResolvedCheckConflict(self.failR, self.failT)
 			return true
 		end
@@ -295,12 +329,19 @@ function DAT:_AddSortingChars(chars, idx)
 		-- 没有共同前缀
 		local code1 = intputCode[self.failArrayIndex + 1]
 		local code2 = self.tail[self.failTailStartIndex]
+		-- print(code1, code2)
 		if code1 ~= code2 then
 			local offset = self:_GetVaildTailOffset({code1, code2})
 			-- 设置父状态的offset
 			self.base[self.failR] = offset
 			-- 设置子状态的check
-			self.check[offset + code1] = self.failR
+			if self.check[offset + code1] ~= 0 then
+				self:_ResolvedCheckConflict(self.failR, offset + code1)
+			end
+			if self.check[offset + code2] ~= 0 then
+				self:_ResolvedCheckConflict(self.failR, offset + code2)
+			end
+ 			self.check[offset + code1] = self.failR
 			self.check[offset + code2] = self.failR
 			-- 修改tail数组
 			self:_LeftShiftTail(self.failTailStartIndex, self.failTailLength + 1, 1)  -- 分割符$也要偏移
@@ -312,12 +353,12 @@ function DAT:_AddSortingChars(chars, idx)
 			-- 设置子状态的offset
 			self.base[offset + code1] = -startIndex
 			self.base[offset + code2] = -self.failTailStartIndex
-			-- print("获得了可用的偏移量", offset, code1, code2)
+		else
+			print("发生错误：tail中有共同前缀，这种情况尚未处理！")
 		end
 	end
 
 	self:_PrintBaseCheckTail()
-	-- self:_TrieSearchByEncodeArray(intputCode)
 end
 
 function DAT:_TrieSearchByEncodeArray(intputCode)
@@ -341,44 +382,53 @@ function DAT:_TrieSearchByEncodeArray(intputCode)
 			break
 		end
 	end
-	print("rh:",r,h)
+	-- print("rh:",r,h)
 	-- 此时h表示当前的节点是带trie的蓝色节点
 	local lastLength1 = #intputCode - h
 	local tailIndex = -self.base[r]
 	local lastLength2 = self:_getTailCodeLength(tailIndex)
-	print("length12",lastLength1, lastLength2)
-	if lastLength1 >= lastLength2 then
-		for i=1,lastLength2 do
-			local char1 = intputCode[h + i]
-			local char2 = self.tail[tailIndex + i - 1]
-			-- print("char1, char2", i, char1, char2)
-			if char2 == self.endCode then
-				break
-			end
-			if char1 ~= char2 then
-				self.failType = 3
-				self.failR = r    --失配字符leader在base中的索引
-				self.failArrayIndex = h  -- 失败的最后那个leader节点，在数组中的索引
-				self.failTailStartIndex = tailIndex  -- 失败的节点在tail中的起始位置
-				self.failTailLength = lastLength2  -- 失败的节点在tail中的长度
-				self.failTailOffsetIndex = i  -- 失败节点的偏移量，从1开始
-				print(r, h, tailIndex, lastLength2, i)
-				print("false type:3")
-				return false
-			end
-		end
-		print("true2")
+	-- print("length12",lastLength1, lastLength2)
+	-- 生成时没有进行optimize优化，此处兼容一下
+	if lastLength1 == 0 and lastLength2 ==0 then
+		print("true1")
 		return true
+	end
+	local i = 1
+	local matched = true
+	local optimize = true  -- 目前阶段optimize必须为true，false的情况还没编码
+	while true do
+		local char1 = intputCode[h + i]
+		local char2 = self.tail[tailIndex + i - 1]
+		-- print("char1, char2", i, char1, char2)
+		if char2 == self.endCode and optimize then
+			break
+		end
+		if char1 ~= char2 then
+			matched = false
+			break
+		end
+		i = i + 1
+		if i > lastLength1 or i > lastLength2 then
+			print("严重错误，结束符不可以使用字库中任何符号!!!")
+			break
+		end
+	end
+
+	if matched then
+		-- 已经匹配到了
+		print("true2")
 	else
-		self.failType = 2  -- 2在tail中长度小于匹配字
+		-- 没有匹配到
+		self.failType = 2
 		self.failR = r    --失配字符leader在base中的索引
 		self.failArrayIndex = h  -- 失败的最后那个leader节点，在数组中的索引
 		self.failTailStartIndex = tailIndex  -- 失败的节点在tail中的起始位置
 		self.failTailLength = lastLength2  -- 失败的节点在tail中的长度
-		print("r h index length", r, h, tailIndex, lastLength2)
+		self.failTailOffsetIndex = i  -- 失败节点的偏移量，从1开始
+		print(r, h, tailIndex, lastLength2, i)
 		print("false type:2")
-		return false
 	end
+	return matched
 end
 
 -- 这个stringArray必须是经过特别排序的
@@ -404,24 +454,22 @@ function DAT:BuildBuyStrings(sortingStringArray)
 	self.endCode = self.count + 1
 	self.sliceCode = self.count + 2
 	self.nilCode = self.count + 3
-
+	print("结束符，分隔符，空符", self.endCode, self.sliceCode, self.nilCode)
 	local sortFunc = function(char1, char2)
 		return self.charTimes[char1] > self.charTimes[char2]
 	end
 	table.sort(self.charArray, sortFunc)
 	for i,v in ipairs(self.charArray) do
 		self.charSet[v] = i
-		-- print(i,v)
+		print(i,v)
 	end
-	for i=1,math.min(4, #sortingStringCharArray) do
+	print("\n")
+	for i=1,#sortingStringCharArray do
+		-- self:_AddSortingChars(sortingStringCharArray[i], i)
 		while self:_AddSortingChars(sortingStringCharArray[i], i) do
 		end
 		print("\n")
 	end
-
-	-- for i,v in ipairs(sortingStringCharArray) do
-	-- 	self:_AddSortingChars(sortingStringCharArray[i])
-	-- end
 end
 
 
@@ -440,17 +488,18 @@ end
 
 local cfgs = require("SensitiveMultiCfg")
 local dat = DAT.New()
-table.SortStringArray(cfgs)
+
 cfgs = {
-	"bachelor",
-	"bcs",
 	"badge",
-	"baby",
-	"back",
-	"badger",
-	"badness",
+	"bachelor",
+	-- "bcs",
+	-- "baby",
+	-- "back",
+	-- "badger",
+	-- "badness",
 }
+table.SortStringArray(cfgs)
 dat:BuildBuyStrings(cfgs)
--- dat:Test()
+print("\n"..tostring(dat:CheckText("bachelor")))
 -- print(dat.count)
 return DAT
