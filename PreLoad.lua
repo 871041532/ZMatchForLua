@@ -118,3 +118,18 @@ function table.getSortKeys(paramTable)
     table.sort(sortKeys, sortKeyFun)
     return sortKeys
 end
+
+
+-- 先按照长度排序，短的在前面，相同长度按照字符顺序排序
+function table.SortStringArray(stringArray)
+    local sortFunc = function(str1, str2)
+        local chars1 = string.ConvertToCharArray(str1)
+        local chars2 = string.ConvertToCharArray(str2)
+        if #chars1 == #chars2 then
+            return str1 < str2
+        else
+            return #chars1 < #chars2
+        end
+    end
+    table.sort(stringArray, sortFunc)
+end

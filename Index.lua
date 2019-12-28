@@ -175,8 +175,8 @@ function CheckRepetCfg()
 	print(string.format("冗余配置:%d条", count))
 end
 
-EvalCfg()
-InitTestEnvironment()
+-- EvalCfg()
+-- InitTestEnvironment()
 -- 测试敏感词检测
 -- TestCheck("正常说一句话的内容,大概这么长", 1, 1)
 -- TestCheck("敏感词:苍井空-", 1, 1)
@@ -189,23 +189,23 @@ InitTestEnvironment()
 -- TestCheck(textString, 1, 1)
 -- TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
 
-local offlineData = zmatch:GetOffLineData()
+-- local offlineData = zmatch:GetOffLineData()
 
-local zmatch2 = ZMatch.New()
-zmatch2:BuildTreeByOfflineData(offlineData)
-zmatch = zmatch2
--- 测试敏感词检测
-TestCheck("正常正常正常正常正常正常正常正常", 1, 1)
-TestCheck("正常说一句的内容，大概这么长...", 1, 1)
-TestCheck("敏感词:苍井空-", 1, 1)
-TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
-local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
-小溪流泉映花彩, 松江孤岛一叶枫。
-南海涟波潭边杏, 敏感词1兼职上门
-敏感词2裤袜女优, 敏感词3泽铃木麻。
-敏感词4费偷窥网, 敏感词5欧美大乳。]]
-TestCheck(textString, 1, 1)
-TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
+-- local zmatch2 = ZMatch.New()
+-- zmatch2:BuildTreeByOfflineData(offlineData)
+-- zmatch = zmatch2
+-- -- 测试敏感词检测
+-- TestCheck("正常正常正常正常正常正常正常正常", 1, 1)
+-- TestCheck("正常说一句的内容，大概这么长...", 1, 1)
+-- TestCheck("敏感词:苍井空-", 1, 1)
+-- TestCheck("带&敏感词:kanzhongguo.com", 1, 1)
+-- local textString = [[长字符串: 苍天有井独自空, 星落天川遥映瞳。
+-- 小溪流泉映花彩, 松江孤岛一叶枫。
+-- 南海涟波潭边杏, 敏感词1兼职上门
+-- 敏感词2裤袜女优, 敏感词3泽铃木麻。
+-- 敏感词4费偷窥网, 敏感词5欧美大乳。]]
+-- TestCheck(textString, 1, 1)
+-- TestFilter("心如苍井空似水,意比松岛枫叶飞。窗外武藤兰花香, 情似饭岛爱相随.", 1, 1)
 
 function ToStringEx(value)
     if type(value)=='table' then
@@ -258,9 +258,10 @@ local writeFile = function(key, strs)
 end
 
 local returnData = {}
-local allcfgs = {}
 
-for k,v in pairs(offlineData) do
+function generateTrieCfg()
+	local allcfgs = {}
+	for k,v in pairs(offlineData) do
 	if k ~= "singleTrieRoot" then
 		local key = k..".lua"
 		returnData[key] = v
@@ -306,13 +307,46 @@ for k,v in pairs(offlineData) do
 		strs = "local temp = "..strs.."\nreturn temp"
 		writeFile("AllConfig.lua", strs)
 	end
+	end
 end
 
-local a = 1
-for k,v in pairs(offlineData.singleTrieRoot[1]) do
-	a = a + 1
-end
+function generateDoubleTrieCfg()
+	local DAT = require("DATrie")
+	local temp_cfgs = gdSensitiveWordsSensitiveWords
+	local cfgs = {}
+	local count = 3000
+	for k,v in pairs(temp_cfgs) do
+		table.insert(cfgs, v.word)
+		count = count - 1
+		if count <= 0 then
+			break
+		end
+	end
 
--- print(returnData["multiWordTileMap.lua"].com[1].kanzhongguo)
+	local dat = DAT.New()
+	table.SortStringArray(cfgs)
+	dat:BuildBuyStrings(cfgs)
+	returnData.DoubleTrieData = dat:GetOfflineData()
+
+	---------------------------------------
+	local strs = TableToStr(returnData.DoubleTrieData)
+	strs = "local temp = "..strs.."\nreturn temp"
+	writeFile("DoubleTrieData.lua", strs)
+	-----------------------------------
+
+	for i,v in ipairs(cfgs) do
+		if dat:CheckText(v) == false then
+			print("严重错误，严重错误，结果不对")
+		end
+		if dat:CheckText(v.."1") == false then
+			print("严重错误，严重错误，结果不对")
+		end
+		if dat:CheckText(string.sub(v, 1, 1)) == true then
+			print("严重错误，严重错误，结果不对", v, string.sub(v, 1, 2))
+		end
+	end
+	print(dat.count)
+end
+generateDoubleTrieCfg()
 
 return returnData
