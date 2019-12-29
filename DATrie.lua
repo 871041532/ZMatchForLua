@@ -516,21 +516,21 @@ function DATS:BuildBuyStrings(strings)
 	local curDat = nil
 	local usingStrings = {}
 	for _,v in ipairs(strings) do
-		if not self:CheckText(v) then
-			if count == 1 then
-				usingStrings[#usingStrings + 1] = {}
-			end
-			table.insert(usingStrings[#usingStrings], v)
-			count = count + 1
-			if count == self.sliceCount then
-				count = 1
-				local dat = DAT.New()
-				dat:BuildBuyStrings(usingStrings[#usingStrings])
-				table.insert(self.datList, dat)
-			end
-		else
-			-- print("已有", v)
+		if count == 1 then
+			usingStrings[#usingStrings + 1] = {}
 		end
+		table.insert(usingStrings[#usingStrings], v)
+		count = count + 1
+		if count == self.sliceCount then
+			count = 1
+			-- break
+		end
+	end
+	print("数量：",#usingStrings)
+	for _,v in ipairs(usingStrings) do
+		local dat = DAT.New()
+		dat:BuildBuyStrings(v)
+		table.insert(self.datList, dat)
 	end
 end
 

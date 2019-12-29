@@ -319,11 +319,19 @@ function generateDoubleTrieCfg()
 	-- local temp_cfgs = require("SensitiveMultiCfg")
 
 	local cfgs = {}
+	-- local count = 600
 	for i,v in pairs(temp_cfgs) do
 		table.insert(cfgs, v.word)
+		-- count = count - 1
+		-- if count <= 0 then
+		-- 	break
+		-- end
 	end
 	table.SortStringArray(cfgs)
 
+-- 	cfgs = {
+-- 	"abcd"
+-- }
 	local dats = DATS.New()
 	dats:BuildBuyStrings(cfgs)
 	returnData.DoubleTrieData = dats:GetOfflineData()
