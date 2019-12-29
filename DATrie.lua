@@ -217,14 +217,15 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 	-- 判断移动冲突confiltcIndex需要移动几个元素
 	local conflictLeader = self.check[conflictIndex]
 	local conflictChildren = self:_GetChildren(conflictLeader)
-	-- if #children < #conflictChildren then
-	if false then
+	if #children < #conflictChildren then
+	-- if false then
 		-- 使用第一种移动方式, 移动当前节点的父节点，解决冲突
 		local childrenCode = {}
 		for _,v in ipairs(children) do
 			local code = v - self.base[self.check[v]] 
 			table.insert(childrenCode, code)
 		end
+		table.insert(childrenCode, newCode)
 		local vaildOffset = self:_GetVaildTailOffset(childrenCode)
 		self.base[leaderIndex] = vaildOffset
 		for i=1,#children do
