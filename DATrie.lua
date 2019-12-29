@@ -528,9 +528,9 @@ function DATS:BuildBuyStrings(strings)
 			if count >= self.sliceCount or i >= #strings then
 				count = 1
 				local dat = DAT.New()
+				table.insert(self.datList, dat)
 				dat.parent = self
 				dat:BuildBuyStrings(usingStrings[#usingStrings])
-				table.insert(self.datList, dat)
 			end
 		-- end
 	end
