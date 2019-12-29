@@ -491,7 +491,7 @@ end
 local DATS = finalClass("DoubleArrayTries")
 
 function DATS:ctor()
-	self.sliceCount = 600  -- 多少个词分割一组
+	self.sliceCount = 100000  -- 多少个词分割一组
 	self.datList = {}  -- dat数组
 end
 
