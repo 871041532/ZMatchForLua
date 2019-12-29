@@ -274,19 +274,22 @@ end
 -- 参数必须是经过排序后的字符串数组，然后又转成二维字符数组
 function DAT:_AddSortingChars(chars)
 	-- self:Test()
-	local charsArray = {}
-	for i=2,#chars do
-		local temp = {}
-		for j=i,#chars do
-			table.insert(temp, chars[j])
-		end
-		table.insert(charsArray, temp)
-	end
-	for _,v in ipairs(charsArray) do
-		local tempCodes = self:_ConvertCharArrayToInputCode(v)
-		if self:_TrieSearchByEncodeArray(tempCodes) then
-			return
-		end
+	-- local charsArray = {}
+	-- for i=2,#chars do
+	-- 	local temp = {}
+	-- 	for j=i,#chars do
+	-- 		table.insert(temp, chars[j])
+	-- 	end
+	-- 	table.insert(charsArray, temp)
+	-- end
+	-- for _,v in ipairs(charsArray) do
+	-- 	local tempCodes = self:_ConvertCharArrayToInputCode(v)
+	-- 	if self:_TrieSearchByEncodeArray(tempCodes) then
+	-- 		return
+	-- 	end
+	-- end
+	if self.parent:CheckText(nil, chars) then
+		return
 	end
 
 	local intputCode = self:_ConvertCharArrayToInputCode(chars)
@@ -492,8 +495,8 @@ function DATS:ctor()
 	self.datList = {}  -- dat数组
 end
 
-function DATS:CheckText(text)
-	local chars = string.ConvertToCharArray(text)
+function DATS:CheckText(text, paramChars)
+	local chars = paramChars or string.ConvertToCharArray(text)
 	local charsArray = {}
 	for i=1,#chars do
 		local temp = {}
@@ -515,23 +518,28 @@ function DATS:BuildBuyStrings(strings)
 	local count = 1
 	local curDat = nil
 	local usingStrings = {}
-	for _,v in ipairs(strings) do
-		if count == 1 then
-			usingStrings[#usingStrings + 1] = {}
-		end
-		table.insert(usingStrings[#usingStrings], v)
-		count = count + 1
-		if count == self.sliceCount then
-			count = 1
-			-- break
-		end
+	for i,v in ipairs(strings) do
+		-- if not self:CheckText() then
+			if count == 1 then
+				usingStrings[#usingStrings + 1] = {}
+			end
+			table.insert(usingStrings[#usingStrings], v)
+			count = count + 1
+			if count >= self.sliceCount or i >= #strings then
+				count = 1
+				local dat = DAT.New()
+				dat.parent = self
+				dat:BuildBuyStrings(usingStrings[#usingStrings])
+				table.insert(self.datList, dat)
+			end
+		-- end
 	end
 	print("数量：",#usingStrings)
-	for _,v in ipairs(usingStrings) do
-		local dat = DAT.New()
-		dat:BuildBuyStrings(v)
-		table.insert(self.datList, dat)
-	end
+	-- for _,v in ipairs(usingStrings) do
+	-- 	local dat = DAT.New()
+	-- 	dat:BuildBuyStrings(v)
+	-- 	table.insert(self.datList, dat)
+	-- end
 end
 
 -- 返回一个DAT.OfflineData数组

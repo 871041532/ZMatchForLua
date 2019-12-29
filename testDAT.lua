@@ -40,7 +40,7 @@ end
 		if not dats:CheckText(v.."1") then
 			print("严重错误，严重错误，结果不对", v.."1")
 		end
-		if dats:CheckText(string.sub(v,1,1)) then
-			print("严重错误，严重错误，结果不对", v, string.sub(v,1,1))
+		if not dats:CheckText("1"..v) then
+			print("严重错误，严重错误，结果不对", "1"..v)
 		end
 	end
