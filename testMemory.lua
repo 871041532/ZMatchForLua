@@ -1,6 +1,7 @@
 collectgarbage("collect")
 local c1 = collectgarbage("count")
-local cfgs = require("SensitiveWordsCfg")
+-- local cfgs = require("SensitiveWordsCfg")
+local cfgs = require("SensitiveConfig/DoubleTrieData")
 local c2 = collectgarbage("count")
 print("加载SensitiveWordsCfg内存:", c2 - c1)
 collectgarbage("collect")

@@ -211,7 +211,10 @@ function ToStringEx(value)
     if type(value)=='table' then
         return TableToStr(value)
     elseif type(value)=='string' then
-        return "\'"..value.."\'"
+    	if value == "\'" or value == "\"" or value == "\\" then
+    		value = '\\'..value
+    	end
+    	return "\""..value.."\""
     else
         return tostring(value)
     end
@@ -233,7 +236,7 @@ function TableToStr(t)
             retstr = retstr..signal..ToStringEx(value)
         else
             if type(key)=='number' or type(key) == 'string' then
-                retstr = retstr..signal..'['..ToStringEx(key).."]="..ToStringEx(value)
+                retstr = retstr..signal.."["..ToStringEx(key).."]="..ToStringEx(value)
             else
                 if type(key)=='userdata' then
                     retstr = retstr..signal.."*s"..TableToStr(getmetatable(key)).."*e".."="..ToStringEx(value)
@@ -311,22 +314,24 @@ function generateTrieCfg()
 end
 
 function generateDoubleTrieCfg()
-	local DAT = require("DATrie")
+	local DATS = require("DATrie")
 	local temp_cfgs = gdSensitiveWordsSensitiveWords
-	local cfgs = {}
-	local count = 3000
-	for k,v in pairs(temp_cfgs) do
-		table.insert(cfgs, v.word)
-		count = count - 1
-		if count <= 0 then
-			break
-		end
-	end
+	-- local temp_cfgs = require("SensitiveMultiCfg")
 
-	local dat = DAT.New()
+	local cfgs = {}
+	-- local count = 600
+	for i,v in pairs(temp_cfgs) do
+		table.insert(cfgs, v.word)
+		-- count = count - 1
+		-- if count <= 0 then
+		-- 	break
+		-- end
+	end
 	table.SortStringArray(cfgs)
-	dat:BuildBuyStrings(cfgs)
-	returnData.DoubleTrieData = dat:GetOfflineData()
+
+	local dats = DATS.New()
+	dats:BuildBuyStrings(cfgs)
+	returnData.DoubleTrieData = dats:GetOfflineData()
 
 	---------------------------------------
 	local strs = TableToStr(returnData.DoubleTrieData)
@@ -335,17 +340,16 @@ function generateDoubleTrieCfg()
 	-----------------------------------
 
 	for i,v in ipairs(cfgs) do
-		if dat:CheckText(v) == false then
-			print("严重错误，严重错误，结果不对")
+		if not dats:CheckText(v) then
+			print("严重错误，严重错误，结果不对", v)
 		end
-		if dat:CheckText(v.."1") == false then
-			print("严重错误，严重错误，结果不对")
+		if not dats:CheckText(v.."1") then
+			print("严重错误，严重错误，结果不对", v.."1")
 		end
-		if dat:CheckText(string.sub(v, 1, 1)) == true then
-			print("严重错误，严重错误，结果不对", v, string.sub(v, 1, 2))
+		if dats:CheckText(string.sub(v,1,1)) then
+			print("严重错误，严重错误，结果不对", v, string.sub(v,1,1))
 		end
 	end
-	print(dat.count)
 end
 generateDoubleTrieCfg()
 

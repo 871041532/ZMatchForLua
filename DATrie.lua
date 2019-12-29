@@ -3,7 +3,7 @@ require("Preload")
 
 --它的想法其实很简单，就是用两个数组来存储一棵trie树，这种存储方法不仅节省内存空间而且检索词语的速度也非常快。
 -- base和check数组的索引表示一个状态 
-local DAT = class("DAT")
+local DAT = finalClass("DoubleArrayTrie")
 
 function DAT:ctor()
 	self.charSet = {}  -- 字符集编码
@@ -45,76 +45,14 @@ function DAT:GetOfflineData()
 	}
 end
 
-function DAT:BuildBuyOfflineData()
-
-end
-
-function DAT:Test()
-	-- self.base = {1,0,6,-17,2,1,2,6,-10,-1,1,0,-20,0,-24,0,0,0,-22,-13}
-	-- self.check = {20,0,1,7,7,7,3,6,3,5,8,0,5,0,6,0,0,0,11,11}
-	self.charSet = {
-		a = 1,
-		b = 2,
-		c = 3,
-		d = 4,
-		e = 5,
-		f = 6,
-		g = 7,
-		h = 8,
-		i = 9,
-		j = 10,
-		k = 11,
-		l = 12,
-		m = 13,
-		n = 14,
-		o = 15,
-		p = 16,
-		q = 17,
-		r = 18,
-		s = 20,
-		y = 21,
-	}
-	-- self.count = 20
-	self.endCode = 19
-	self.sliceCode = -1
-	self.nilCode = -2
-
-	-- self.tail = {
-	-- 	[1] = self.charSet.e,
-	-- 	[2] = self.charSet.l,
-	-- 	[3] = self.charSet.o,
-	-- 	[4] = self.charSet.r,
-	-- 	[5] = self.endCode,
-	-- 	[6] = self.sliceCode,
-	-- 	[7] = 0,
-	-- 	[8] = 0,
-	-- 	[9] = 0,
-	-- 	[10] = self.charSet.s,
-	-- 	[11] = self.endCode,
-	-- 	[12] = self.sliceCode,
-	-- 	[13] = self.sliceCode,
-	-- 	[14] = 0,
-	-- 	[15] = 0,
-	-- 	[16] = 0,
-	-- 	[17] = self.charSet.y,
-	-- 	[18] = self.endCode,
-	-- 	[19] = self.sliceCode,
-	-- 	[20] = self.endCode,
-	-- 	[21] = self.sliceCode,
-	-- 	[22] = self.endCode,
-	-- 	[23] = self.sliceCode,
-	-- 	[24] = self.charSet.e,
-	-- 	[25] = self.charSet.s,
-	-- 	[26] = self.charSet.s,
-	-- 	[27] = self.endCode,
-	-- 	[28] = self.sliceCode,
-	-- }
-	local test = function (text)
-		local r = self:CheckText(text) and 'true' or 'false'
-		local s = string.format("检测【%s】,结果%s",text, r)
-		print(s)
-	end
-	-- test("badge")
+function DAT:BuildBuyOfflineData(offlineData)
+	self.base = offlineData.base
+	self.check = offlineData.check
+	self.tail = offlineData.tail
+	self.endCode = offlineData.endCode
+	self.sliceCode = offlineData.sliceCode
+	self.nilCode = offlineData.nilCode
+	self.charSet = offlineData.charSet
 end
 
 function DAT:_getTailCodeLength(start)
@@ -128,12 +66,18 @@ function DAT:_getTailCodeLength(start)
 	return length
 end
 
+-- 检测文本
 function DAT:CheckText(text)
 	local chars = string.ConvertToCharArray(text)
 	local intputCode = self:_ConvertCharArrayToInputCode(chars)
 	return self:_TrieSearchByEncodeArray(intputCode)
 end
 
+-- 检测charArray
+function DAT:CheckCharArray(charArray)
+	local intputCode = self:_ConvertCharArrayToInputCode(charArray)
+	return self:_TrieSearchByEncodeArray(intputCode)
+end
 
 -- 检测字符串是否存在
 function DAT:_ConvertCharArrayToInputCode(charArray)
@@ -188,9 +132,9 @@ function DAT:_PrintBaseCheckTail()
 	print(strs)
 end
 
-function DAT:_ExpandBaseAndCheck(count)
+function DAT:_ExpandBaseAndCheck(count, source)
 	if count == nil or count < 0 then
-		print("_ExpandBaseAndCheck错误的count参数：", count)
+		-- print("_ExpandBaseAndCheck错误的count参数：", count)
 		return
 	end
 	if count > #self.base then
@@ -213,6 +157,9 @@ function DAT:_GetVaildTailOffset(childrenCode)
 		local ok = true
 		for _,v in ipairs(childrenCode) do
 			local targetIndex = offset + v
+			-- if targetIndex < 0 then
+			-- 	print("targetIndex小于0：", offset, v)
+			-- end
 			self:_ExpandBaseAndCheck(targetIndex)
 			if self.check[targetIndex] ~= 0 then
 				ok = false
@@ -246,7 +193,7 @@ end
 function DAT:_GetChildren(fatherIndex)
 	local children = {}
 	for i,v in ipairs(self.check) do
-		if v == fatherIndex then
+		if v == fatherIndex and i ~= 1 then
 			table.insert(children, i)
 		end
 	end
@@ -299,6 +246,9 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 		local conflictChildrenCode = {}
 		for _,v in ipairs(conflictChildren) do
 			local code = v - self.base[self.check[v]] 
+			if code < 0 then
+				print("发生错误，出现负数", v, self.base[self.check[v]])
+			end
 			table.insert(conflictChildrenCode, code)
 		end
 		local vaildOffset = self:_GetVaildTailOffset(conflictChildrenCode)
@@ -331,6 +281,9 @@ function DAT:_AddSortingChars(chars, idx)
 	end
 	if self.failType == 1 then
 		-- 在base中失配
+		-- if self.failT < 0 then
+		-- 	print("failT小于0：", self.failT)
+		-- end
 		self:_ExpandBaseAndCheck(self.failT)
 		if self.check[self.failT] == 0 then
 			-- 此处check是空的可以直接插入
@@ -517,4 +470,67 @@ function DAT:BuildBuyStrings(sortingStringArray)
 	end
 end
 
-return DAT
+local DATS = finalClass("DoubleArrayTries")
+
+function DATS:ctor()
+	self.sliceCount = 600  -- 多少个词分割一组
+	self.datList = {}  -- dat数组
+end
+
+function DATS:CheckText(text)
+	local chars = string.ConvertToCharArray(text)
+	for _,dat in ipairs(self.datList) do
+		if dat:CheckCharArray(chars) then
+			return true
+		end
+	end
+end
+
+-- build的时候会根据字符集的数量分割成多个子DAT以节省内存
+-- 参数必须是经过table.SortStringArray排序后的字符串数组
+function DATS:BuildBuyStrings(strings)
+	local count = 1
+	local curDat = nil
+	local usingStrings = {}
+	for _,v in ipairs(strings) do
+		if count == 1 then
+			usingStrings[#usingStrings + 1] = {}
+		end
+		table.insert(usingStrings[#usingStrings], v)
+		count = count + 1
+		if count == self.sliceCount then
+			count = 1
+			-- break
+		end
+	end
+	print("数量：",#usingStrings)
+	for _,v in ipairs(usingStrings) do
+		local dat = DAT.New()
+		dat:BuildBuyStrings(v)
+		table.insert(self.datList, dat)
+	end
+end
+
+-- 返回一个DAT.OfflineData数组
+function DATS:BuildBuyOfflineData(offlineData)
+	self.datList = {}
+	for _,data in ipairs(offlineData) do
+		local dat = DAT.New()
+		dat:BuildBuyOfflineData(data)
+		table.insert(self.datList, dat)
+	end
+end
+
+-- 获取DAT数据
+function DATS:GetOfflineData()
+	local offlineData = {}
+	for _,dat in ipairs(self.datList) do
+		local data = dat:GetOfflineData()
+		table.insert(offlineData, data)
+	end
+	return offlineData
+end
+
+return DATS
+
+-- return DAT
