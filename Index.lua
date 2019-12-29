@@ -329,6 +329,9 @@ function generateDoubleTrieCfg()
 	end
 	table.SortStringArray(cfgs)
 
+-- 	cfgs = {
+-- 	"abcd"
+-- }
 	local dats = DATS.New()
 	dats:BuildBuyStrings(cfgs)
 	returnData.DoubleTrieData = dats:GetOfflineData()
@@ -337,19 +340,7 @@ function generateDoubleTrieCfg()
 	local strs = TableToStr(returnData.DoubleTrieData)
 	strs = "local temp = "..strs.."\nreturn temp"
 	writeFile("DoubleTrieData.lua", strs)
-	-----------------------------------
-
-	for i,v in ipairs(cfgs) do
-		if not dats:CheckText(v) then
-			print("严重错误，严重错误，结果不对", v)
-		end
-		if not dats:CheckText(v.."1") then
-			print("严重错误，严重错误，结果不对", v.."1")
-		end
-		if dats:CheckText(string.sub(v,1,1)) then
-			print("严重错误，严重错误，结果不对", v, string.sub(v,1,1))
-		end
-	end
+	----------------------------------
 end
 generateDoubleTrieCfg()
 

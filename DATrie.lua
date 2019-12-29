@@ -272,8 +272,23 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 end
 
 -- 参数必须是经过排序后的字符串数组，然后又转成二维字符数组
-function DAT:_AddSortingChars(chars, idx)
+function DAT:_AddSortingChars(chars)
 	-- self:Test()
+	local charsArray = {}
+	for i=2,#chars do
+		local temp = {}
+		for j=i,#chars do
+			table.insert(temp, chars[j])
+		end
+		table.insert(charsArray, temp)
+	end
+	for _,v in ipairs(charsArray) do
+		local tempCodes = self:_ConvertCharArrayToInputCode(v)
+		if self:_TrieSearchByEncodeArray(tempCodes) then
+			return
+		end
+	end
+
 	local intputCode = self:_ConvertCharArrayToInputCode(chars)
 	-- 这个字符串本来就是屏蔽字，什么都不做
 	if self:_TrieSearchByEncodeArray(intputCode) then
@@ -458,9 +473,9 @@ function DAT:BuildBuyStrings(sortingStringArray)
 	end
 	-- print("\n")
 	for i=1,#sortingStringCharArray do
-		-- self:_AddSortingChars(sortingStringCharArray[i], i)
+		-- self:_AddSortingChars(sortingStringCharArray[i])
 		local count = 100
-		while self:_AddSortingChars(sortingStringCharArray[i], i) do
+		while self:_AddSortingChars(sortingStringCharArray[i]) do
 			count = count - 1
 			if count <= 0 then
 				print("while循环太多，请检查")
@@ -479,11 +494,19 @@ end
 
 function DATS:CheckText(text)
 	local chars = string.ConvertToCharArray(text)
-	for _,dat in ipairs(self.datList) do
-		if dat:CheckCharArray(chars) then
-			return true
+	local charsArray = {}
+	for i=1,#chars do
+		local temp = {}
+		for j=i,#chars do
+			table.insert(temp, chars[j])
+		end
+		for _,dat in ipairs(self.datList) do
+			if dat:CheckCharArray(temp) then
+				return true
+			end
 		end
 	end
+	return false
 end
 
 -- build的时候会根据字符集的数量分割成多个子DAT以节省内存
