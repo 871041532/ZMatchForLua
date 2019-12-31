@@ -314,32 +314,21 @@ function generateTrieCfg()
 end
 
 function generateDoubleTrieCfg()
-	local DATS = require("DATrie")
-	local temp_cfgs = gdSensitiveWordsSensitiveWords
-	-- local temp_cfgs = require("SensitiveMultiCfg")
+	local t1 = os.clock()
+	local DAT = require("DATrie")
+	-- local cfgs = require("SensitiveMultiCfg")
+	local cfgs = require("SensitiveWordsCfg")
 
-	local cfgs = {}
-	-- local count = 600
-	for i,v in pairs(temp_cfgs) do
-		table.insert(cfgs, v.word)
-		-- count = count - 1
-		-- if count <= 0 then
-		-- 	break
-		-- end
-	end
-	table.SortStringArray(cfgs)
-
--- 	cfgs = {
--- 	"abcd"
--- }
-	local dats = DATS.New()
-	dats:BuildBuyStrings(cfgs)
+	local dats = DAT.New()
+	dats:BuildBuyCfgs(cfgs, "word")
 	returnData.DoubleTrieData = dats:GetOfflineData()
 
 	---------------------------------------
 	local strs = TableToStr(returnData.DoubleTrieData)
 	strs = "local temp = "..strs.."\nreturn temp"
 	writeFile("DoubleTrieData.lua", strs)
+	local t2 = os.clock()
+	print("Build Time:",t2 - t1)
 	----------------------------------
 end
 generateDoubleTrieCfg()

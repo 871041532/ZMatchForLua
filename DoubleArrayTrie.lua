@@ -107,7 +107,7 @@ function DAT:_GetVaildTailOffset(childrenCode)
 		if ok then
 			found = true
 		else
-			offset = offset + 1
+			offset = offset + 20
 		end
 	end
 	return offset
@@ -223,8 +223,8 @@ function DAT:_AddEncodesItem(intputCode)
 			-- 此处check是空的可以直接插入
 			self.base[self.failT] = -(#self.tail + 1)
 			self.check[self.failT] = self.failR
-			for i=self.failCharIndex + 1, #intputCode do
-				self.tail[#self.tail + 1] = intputCode[i]
+			for i=self.failCharIndex + 1, #intputCode + 1 do
+				self.tail[#self.tail + 1] = intputCode[i] or self.endCode
 			end
 			self.tail[#self.tail + 1] = self.sliceCode
 		else
@@ -236,7 +236,7 @@ function DAT:_AddEncodesItem(intputCode)
 	elseif self.failType == 2 then
 		-- 在tail中因为长度太短失配
 		-- 没有共同前缀
-		local code1 = intputCode[self.failArrayIndex + 1]
+		local code1 = intputCode[self.failArrayIndex + 1] or self.endCode
 		local code2 = self.tail[self.failTailStartIndex]
 		-- print(code1, code2)
 		if code1 ~= code2 then
@@ -249,8 +249,8 @@ function DAT:_AddEncodesItem(intputCode)
 			-- 修改tail数组
 			self:_LeftShiftTail(self.failTailStartIndex, self.failTailLength + 1, 1)  -- 分割符$也要偏移
 			local startIndex = #self.tail + 1
-			for i=self.failArrayIndex + 2, #intputCode do
-				self.tail[#self.tail + 1] = intputCode[i]
+			for i=self.failArrayIndex + 2, #intputCode + 1 do
+				self.tail[#self.tail + 1] = intputCode[i] or self.endCode
 			end
 			self.tail[#self.tail + 1] = self.sliceCode
 			-- 设置子状态的offset
@@ -260,7 +260,7 @@ function DAT:_AddEncodesItem(intputCode)
 			-- print("发生错误：tail中有共同前缀，这种情况尚未处理！")
 			local curFather = self.failR
 			for i=1,self.failTailOffsetIndex do
-				local code1 = intputCode[self.failArrayIndex + i]
+				local code1 = intputCode[self.failArrayIndex + i] or self.endCode
 				local code2 = self.tail[self.failTailStartIndex + i -1]
 				local offset = self:_GetVaildTailOffset({code1, code2})
 				-- 设置父状态的offset
@@ -278,8 +278,8 @@ function DAT:_AddEncodesItem(intputCode)
 			-- print("xxxx:",self.failTailStartIndex, self.failTailLength + 1, self.failTailOffsetIndex)
 			self:_LeftShiftTail(self.failTailStartIndex, self.failTailLength + 1, self.failTailOffsetIndex)  -- 分割符$也要偏移
 			-- 为新增数据设置tail
-			for i=self.failArrayIndex + self.failTailOffsetIndex + 1, #intputCode do
-				self.tail[#self.tail + 1] = intputCode[i]
+			for i=self.failArrayIndex + self.failTailOffsetIndex + 1, #intputCode + 1 do
+				self.tail[#self.tail + 1] = intputCode[i] or self.endCode
 			end
 			self.tail[#self.tail + 1] = self.sliceCode
 		end
