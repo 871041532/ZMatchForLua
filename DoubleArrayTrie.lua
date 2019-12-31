@@ -27,6 +27,7 @@ function DAT:ctor()
 	self.failTailLength = 0  -- 失败的节点在tail中的长度
 	-- 失败类型3专用（类型2的那些字段也用到了）
 	self.failTailOffsetIndex = 0  -- 失败节点的偏移量，从1开始
+	-- 当前的inputstartIndex
 end
 
 function DAT:GetOfflineData()
@@ -55,7 +56,7 @@ end
 function DAT:CheckText(text)
 	local chars = string.ConvertToCharArray(text)
 	local encodes = Tool.ConvertCharArrayToEncodeArray(self.charSet, chars, self.nilCode)
-	return self:_TrieSearchByEncodeArray(encodes)
+	return self:_MatchAllSubByEncodes(encodes)
 end
 
 -- 获取tail中start开始的字符串长度
@@ -207,10 +208,9 @@ function DAT:_ResolvedCheckConflict(leaderIndex, conflictIndex)
 end
 
 -- 添加一个EncodesItem
-function DAT:_AddEncodesItem(chars)
-	local intputCode = self:_ConvertCharArrayToInputCode(chars)
+function DAT:_AddEncodesItem(intputCode)
 	-- 这个字符串本来就是屏蔽字，什么都不做
-	if self:_MatchByEncodes(intputCode) then
+	if self:_MatchAllSubByEncodes(intputCode) then
 		return
 	end
 	if self.failType == 1 then
@@ -288,11 +288,23 @@ function DAT:_AddEncodesItem(chars)
 	-- self:_PrintBaseCheckTail()
 end
 
-function DAT:_MatchByEncodes(intputCode)
+-- 遍历检测所有的inputcode
+function DAT:_MatchAllSubByEncodes(inputCode)
+	for i=#inputCode,1,-1 do
+		if self:_MatchByEncodes(inputCode, i) then
+			return true
+		end
+	end
+	return false
+end
+
+function DAT:_MatchByEncodes(intputCode, startIdx)
+	self.failInputStartIndex = startIdx
 	local r = 1
 	local h = 0
 	while true do
-		local t = self.base[r] + intputCode[h + 1]
+		local code = intputCode[h + startIdx] or self.endCode
+		local t = self.base[r] + code  --intputCode[h + 1]
 		if self.check[t] ~= r then
 			self.failType = 1
 			self.failR = r  --失配字符leader在base中的索引
@@ -311,7 +323,7 @@ function DAT:_MatchByEncodes(intputCode)
 	end
 	-- print("rh:",r,h)
 	-- 此时h表示当前的节点是带trie的蓝色节点
-	local lastLength1 = #intputCode - h
+	local lastLength1 = #intputCode - startIdx + 2 - h
 	local tailIndex = -self.base[r]
 	local lastLength2 = self:_getTailCodeLength(tailIndex)
 	-- print("length12",lastLength1, lastLength2)
@@ -324,7 +336,7 @@ function DAT:_MatchByEncodes(intputCode)
 	local matched = true
 	local optimize = true  -- 目前阶段optimize必须为true，false的情况还没编码
 	while true do
-		local char1 = intputCode[h + i]
+		local char1 = intputCode[h + startIdx - 1 + i] or self.endCode
 		local char2 = self.tail[tailIndex + i - 1]
 		-- print("char1, char2", i, char1, char2)
 		if char2 == self.endCode and optimize then
@@ -369,7 +381,7 @@ function DAT:BuildBuyCfgs(cfgs, key)
 
 	for _,v in ipairs(encodesArray) do
 		local count = 100
-		while self:_AddEncodesItem(sortingStringCharArray[i]) do
+		while self:_AddEncodesItem(v) do
 			count = count - 1
 			if count <= 0 then
 				print("while循环太多，请检查逻辑错误")
@@ -377,3 +389,5 @@ function DAT:BuildBuyCfgs(cfgs, key)
 		end
 	end
 end
+
+return DAT

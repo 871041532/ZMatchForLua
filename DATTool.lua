@@ -87,6 +87,4 @@ function DATTool.ConvertCharArrayToEncodeArray(charSet, charArray, nilCode)
     return encodeArray
 end
 
-local cfgs = require("SensitiveWordsCfg")
-local data = DATTool.GenerateCharSetByCfgs(cfgs, "word")
 return DATTool
