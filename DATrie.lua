@@ -13,6 +13,10 @@ function DAT:ctor()
 	self.nilCode = 0  -- 空的字符编码count + 3（字符集中不存在的字符都用这个编码）
 	self.extOrCheck = nil
 
+	--- 为filter所用 ----
+	self.matchStartIndex = 0
+	self.matchEndIndex = 0
+
 	---------------------- 动态构建时用的,离线构建不用 ----------------------------
 	self.charArray = {} -- 存放所有字的数组, 按照出现频率倒叙排序
 	self.charTimes = {} -- k char v times charSet中char出现的频率，排序用的
@@ -289,7 +293,7 @@ function DAT:_AddEncodesItem(intputCode)
 	-- self:_PrintBaseCheckTail()
 end
 
--- 遍历检测所有的inputcode
+-- 遍历检测所有的inputcode,有匹配到的就返回true
 function DAT:_MatchAllSubByEncodes(inputCode)
 	for i=#inputCode,1,-1 do
 		if self:_MatchByEncodes(inputCode, i) then
@@ -299,8 +303,23 @@ function DAT:_MatchAllSubByEncodes(inputCode)
 	return false
 end
 
+-- 遍历检测所有的inputcode，返回匹配到的索引列表
+function DAT:_MatchAllSubGetAllIndex(inputCode)
+	local list = nil  -- 元素是(startIndex, endIndex)数组
+	for i=1,#inputCode do
+		if self:_MatchByEncodes(inputCode, i) then
+			if not list then
+				list = {}
+			end
+			table.insert(list, {self.matchStartIndex, self.matchEndIndex})
+		end
+	end
+	return list
+end
+
+
 function DAT:_MatchByEncodes(intputCode, startIdx)
-	self.failInputStartIndex = startIdx
+	self.matchStartIndex = startIdx
 	local r = 1
 	local h = 0
 	while true do
@@ -331,13 +350,16 @@ function DAT:_MatchByEncodes(intputCode, startIdx)
 	-- 生成时没有进行optimize优化，此处兼容一下
 	if lastLength1 == 0 and lastLength2 ==0 then
 		-- print("true1")
+		self.matchEndIndex = #inputCode
 		return true
 	end
 	local i = 1
 	local matched = true
 	local optimize = true  -- 目前阶段optimize必须为true，false的情况还没编码
+	local tempIdx
 	while true do
-		local char1 = intputCode[h + startIdx - 1 + i] or self.endCode
+		tempIdx = h + startIdx - 1 + i
+		local char1 = intputCode[tempIdx] or self.endCode
 		local char2 = self.tail[tailIndex + i - 1]
 		-- print("char1, char2", i, char1, char2)
 		if char2 == self.endCode and optimize then
@@ -355,6 +377,7 @@ function DAT:_MatchByEncodes(intputCode, startIdx)
 	end
 
 	if matched then
+		self.matchEndIndex = tempIdx - 1
 		-- 已经匹配到了
 		-- print("true2")
 	else
@@ -404,6 +427,8 @@ function DATProxy:ctor()
 	self.sliceCode = 0
 	self.nilCode = 0
 	self.dats = {}
+	self.matchStartIndex = 0
+	self.matchEndIndex = 0
 end
 
 -- 检测文本
@@ -412,10 +437,41 @@ function DATProxy:CheckText(text)
 	local encodes = Tool.ConvertCharArrayToEncodeArray(self.charSet, chars, self.nilCode)
 	for _,dat in ipairs(self.dats) do
 		if dat:_MatchAllSubByEncodes(encodes) then
+			self.matchStartIndex = dat.matchStartIndex
+			self.matchEndIndex = dat.matchEndIndex
 			return true
 		end
 	end
 	return false
+end
+
+-- 过滤文本
+function DATProxy:FilterText(text)
+	local chars = string.ConvertToCharArray(text)
+	local encodes = Tool.ConvertCharArrayToEncodeArray(self.charSet, chars, self.nilCode)
+	local t = nil
+	for _,dat in ipairs(self.dats) do
+		local temp = dat:_MatchAllSubGetAllIndex(encodes)
+		if temp then
+			if not t then
+				t = {}
+			end
+			table.insert(t, temp)
+		end
+	end
+	if t then
+		for _,t1 in ipairs(t) do
+			for _,t2 in ipairs(t1) do
+				for i=t2[1],t2[2] do
+					chars[i] = "*"
+				end
+			end
+		end
+		local newText = table.concat(chars)
+		return newText
+	else
+		return text
+	end
 end
 
 function DATProxy:BuildBuyCfgs(cfgs, key)
