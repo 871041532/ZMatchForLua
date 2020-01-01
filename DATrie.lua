@@ -11,6 +11,7 @@ function DAT:ctor()
 	self.endCode = 0  -- 结束符 #  count+1
 	self.sliceCode = 0  -- 分割符 $ count + 2
 	self.nilCode = 0  -- 空的字符编码count + 3（字符集中不存在的字符都用这个编码）
+	self.extOrCheck = nil
 
 	---------------------- 动态构建时用的,离线构建不用 ----------------------------
 	self.charArray = {} -- 存放所有字的数组, 按照出现频率倒叙排序
@@ -107,7 +108,7 @@ function DAT:_GetVaildTailOffset(childrenCode)
 		if ok then
 			found = true
 		else
-			offset = offset + 20
+			offset = offset + 30
 		end
 	end
 	return offset
@@ -210,7 +211,7 @@ end
 -- 添加一个EncodesItem
 function DAT:_AddEncodesItem(intputCode)
 	-- 这个字符串本来就是屏蔽字，什么都不做
-	if self:_MatchAllSubByEncodes(intputCode) then
+	if (self.extOrCheck and self.extOrCheck(intputCode)) or self:_MatchAllSubByEncodes(intputCode) then
 		return
 	end
 	if self.failType == 1 then
@@ -380,14 +381,117 @@ function DAT:BuildBuyCfgs(cfgs, key)
 	self.nilCode = data.nilCode
 
 	for _,v in ipairs(encodesArray) do
-		local count = 100
-		while self:_AddEncodesItem(v) do
-			count = count - 1
-			if count <= 0 then
-				print("while循环太多，请检查逻辑错误")
-			end
+		self:_BuildOneEncodeArray(v)
+	end
+end
+
+function DAT:_BuildOneEncodeArray(encodeArray)
+	local count = 100
+	while self:_AddEncodesItem(encodeArray) do
+		count = count - 1
+		if count <= 0 then
+			print("while循环太多，请检查逻辑错误")
 		end
 	end
 end
 
-return DAT
+local DATProxy = class("DATProxy")
+
+function DATProxy:ctor()
+	self.sliceCount = 7000  -- 7000
+	self.charSet = nil
+	self.endCode = 0
+	self.sliceCode = 0
+	self.nilCode = 0
+	self.dats = {}
+end
+
+-- 检测文本
+function DATProxy:CheckText(text)
+	local chars = string.ConvertToCharArray(text)
+	local encodes = Tool.ConvertCharArrayToEncodeArray(self.charSet, chars, self.nilCode)
+	for _,dat in ipairs(self.dats) do
+		if dat:_MatchAllSubByEncodes(encodes) then
+			return true
+		end
+	end
+	return false
+end
+
+function DATProxy:BuildBuyCfgs(cfgs, key)
+	local data = Tool.GenerateCharSetByCfgs(cfgs, key)
+	local encodesArray = data.encodesArray
+	self.charSet = data.charSet
+	self.endCode = data.endCode
+	self.sliceCode = data.sliceCode
+	self.nilCode = data.nilCode
+
+	local extOrCheck = function(encodes)
+			for i=1,#self.dats - 1 do
+			if self.dats[i]:_MatchAllSubByEncodes(encodes) then
+				return true
+			end
+		end
+		return false
+	end
+
+	local count = 1
+	for _,v in ipairs(encodesArray) do
+		local dat
+		if count == 1 then
+			dat = DAT.New()
+			dat.charSet = data.charSet
+			dat.endCode = data.endCode
+			dat.sliceCode = data.sliceCode
+			dat.nilCode = data.nilCode
+			dat.extOrCheck = extOrCheck
+			table.insert(self.dats, dat)
+		else
+			dat = self.dats[#self.dats]
+		end
+		count = count + 1
+		if count > self.sliceCount then
+			count = 1
+		end
+		dat:_BuildOneEncodeArray(v)
+	end
+end
+
+
+function DATProxy:GetOfflineData()
+	local offlineData = {
+		charSet = self.charSet,
+		endCode = self.endCode,
+		sliceCode = self.sliceCode,
+		nilCode = self.nilCode,
+		children = {},
+	}
+	for _,dat in ipairs(self.dats) do
+		local data = dat:GetOfflineData()
+		data.endCode = nil
+		data.sliceCode = nil
+		data.nilCode = nil
+		data.charSet = nil
+		table.insert(offlineData.children, data)
+	end
+	return offlineData
+end
+
+function DATProxy:BuildBuyOfflineData(offlineData)
+	self.endCode = offlineData.endCode
+	self.sliceCode = offlineData.sliceCode
+	self.nilCode = offlineData.nilCode
+	self.charSet = offlineData.charSet
+	self.dats = {}
+	for i,v in ipairs(offlineData.children) do
+		local dat = DAT.New()
+		dat:BuildBuyOfflineData(v)  -- 这里面只有tail base check数组
+		dat.endCode = offlineData.endCode
+		dat.sliceCode = offlineData.sliceCode
+		dat.nilCode = offlineData.nilCode
+		dat.charSet = offlineData.charSet
+		table.insert(self.dats, dat)
+	end
+end
+
+return DATProxy
