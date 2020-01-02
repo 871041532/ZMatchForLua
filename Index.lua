@@ -317,7 +317,9 @@ function generateDoubleTrieCfg()
 	local t1 = os.clock()
 	local DAT = require("DATrie")
 	-- local cfgs = require("SensitiveMultiCfg")
-	local cfgs = require("SensitiveWordsCfg")
+	-- local cfgs = require("SensitiveWordsCfg")
+	require("SensitiveWordsCfg")
+	local cfgs = gdSensitiveWordsSensitiveWords
 
 	local dats = DAT.New()
 	dats:BuildBuyCfgs(cfgs, "word")
