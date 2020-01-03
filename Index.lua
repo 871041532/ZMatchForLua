@@ -226,7 +226,10 @@ function TableToStr(t)
     local retstr= "{"
 
     local i = 1
-    for key,value in pairs(t) do
+    local sortKeys = table.getSortKeys(t)
+    for _, key in ipairs(sortKeys) do
+       local value = t[key]
+    -- for key,value in pairs(t) do
         local signal = ","
         if i==1 then
             signal = ""
@@ -325,13 +328,13 @@ function generateDoubleTrieCfg()
 	dats:BuildBuyCfgs(cfgs, "word")
 	returnData.DoubleTrieData = dats:GetOfflineData()
 
-	---------------------------------------
+	-------------------------------------
 	local strs = TableToStr(returnData.DoubleTrieData)
 	strs = "local temp = "..strs.."\nreturn temp"
 	writeFile("DoubleTrieData.lua", strs)
 	local t2 = os.clock()
 	print("Build Time:",t2 - t1)
-	----------------------------------
+	--------------------------------
 end
 generateDoubleTrieCfg()
 
